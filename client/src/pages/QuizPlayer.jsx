@@ -259,7 +259,8 @@ export default function QuizPlayer() {
                 student_details: studentForm
             });
 
-            if (res.data.success || res.status === 200) {
+            // More robust success check: either boolean true or HTTP 200/201
+            if (res.data.success === true || res.status === 200 || res.status === 201) {
                 setSubmissionStatus('success');
                 socket.emit('new_submission', {
                     quizCode: code,
