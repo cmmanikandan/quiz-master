@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS questions (
     option_b TEXT NOT NULL,
     option_c TEXT NOT NULL,
     option_d TEXT NOT NULL,
-    correct_option ENUM('a', 'b', 'c', 'd') NOT NULL,
+    correct_option TEXT NOT NULL,
     explanation TEXT,
     type ENUM('mcq', 'short', 'tf') DEFAULT 'mcq',
     points INT DEFAULT 1,
