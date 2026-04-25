@@ -364,6 +364,8 @@ export default function QuizPlayer() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => {
+                                        document.documentElement.requestFullscreen().catch(() => { });
+                                        setIsFullScreen(true);
                                         setHasSubmittedDetails(true);
                                     }}
                                     className="bg-primary-600 hover:bg-primary-500 text-white px-16 py-6 rounded-[24px] text-xl font-black uppercase tracking-widest flex items-center gap-4 shadow-3xl"
