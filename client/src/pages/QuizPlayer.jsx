@@ -16,7 +16,9 @@ export default function QuizPlayer() {
     const [answers, setAnswers] = useState([]);
     const [timeLeft, setTimeLeft] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isFullScreen, setIsFullScreen] = useState(false);
     const [warnings, setWarnings] = useState(0);
+    const [isBlocked, setIsBlocked] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const [isLiveReady, setIsLiveReady] = useState(false);
     const [hasSubmittedDetails, setHasSubmittedDetails] = useState(false);
@@ -30,7 +32,9 @@ export default function QuizPlayer() {
         try {
             const res = await api.get(`/attempt/status/${code}`);
             if (res.data.hasActive) {
-                if (res.data.status === 'ongoing' || res.data.status === 'blocked') {
+                if (res.data.status === 'blocked') {
+                    setIsBlocked(true);
+                } else if (res.data.status === 'ongoing') {
                     // Resume logic
                     setAttemptId(res.data.attempt.id);
                     setWarnings(res.data.attempt.tab_switches || 0);
@@ -48,6 +52,16 @@ export default function QuizPlayer() {
     };
 
 
+    const handleBlockUser = async () => {
+        if (isBlocked) return;
+        setIsBlocked(true);
+        try {
+            await api.post(`/quiz/block-my-attempt/${code}`);
+        } catch (err) {
+            console.error("Block sync failed");
+        }
+    };
+
     useEffect(() => {
         const initialize = async () => {
             await fetchQuiz();
@@ -57,10 +71,35 @@ export default function QuizPlayer() {
         initialize();
         socket.connect();
 
+        const handleVisibilityChange = () => {
+            if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
+                handleBlockUser();
+            }
+        };
+
+        const handleBlur = () => {
+            if (isLiveReady && !loading && !isBlocked && !isFinishing) {
+                handleBlockUser();
+            }
+        };
+
+        const handleFullscreenChange = () => {
+            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isFinishing) {
+                handleBlockUser();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        window.addEventListener("blur", handleBlur);
+
         return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            document.removeEventListener("fullscreenchange", handleFullscreenChange);
+            window.removeEventListener("blur", handleBlur);
             socket.disconnect();
         };
-    }, []);
+    }, [isLiveReady, loading, isBlocked, isFinishing]);
 
     const [shuffledOptions, setShuffledOptions] = useState({});
 
@@ -153,6 +192,7 @@ export default function QuizPlayer() {
     };
 
     const handleSubmit = async (isAuto = false) => {
+        if (isBlocked) return;
         setIsFinishing(true);
 
         if (!isAuto) {
@@ -228,7 +268,33 @@ export default function QuizPlayer() {
     );
 
 
-    if (!isLiveReady || (quiz?.require_details && !hasSubmittedDetails)) return (
+    if (isBlocked) {
+        return (
+            <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[999] flex items-center justify-center p-6">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-lg text-center border-red-500/50 border-2 shadow-2xl">
+                    <div className="w-24 h-24 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                        <AlertTriangle size={48} />
+                    </div>
+                    <h1 className="text-4xl font-black mb-4 uppercase tracking-tighter text-red-500">Security Lockdown</h1>
+                    <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                        A security violation was detected (Tab Switch or Loss of Focus). Your session has been terminated to preserve integrity.
+                    </p>
+                    <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8">
+                        <p className="text-xs font-black text-primary-400 uppercase mb-2 tracking-widest">Administrator Action Required</p>
+                        <p className="text-slate-300 text-sm italic">"Please provide your Register Number to the staff to request a manual unblock."</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <button onClick={() => window.location.reload()} className="flex-1 py-4 rounded-xl bg-primary-600 hover:bg-primary-500 font-bold transition-all transition-all flex items-center justify-center gap-2">
+                            <RefreshCw size={18} /> Retry Sync
+                        </button>
+                        <button onClick={() => navigate('/dashboard')} className="flex-1 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold transition-all">Exit Player</button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
+    if (!isLiveReady || !isFullScreen || (quiz?.require_details && !hasSubmittedDetails)) return (
         <div className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass p-8 md:p-12 rounded-[30px] md:rounded-[40px] max-w-2xl w-full text-center border-primary-500/30 border-2 my-10 shadow-3xl">
 

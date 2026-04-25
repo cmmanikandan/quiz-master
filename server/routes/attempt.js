@@ -68,10 +68,10 @@ router.post('/submit', auth, async (req, res) => {
         if (existing.length > 0) {
             attemptId = existing[0].id;
             await pool.execute(
-                'UPDATE attempts SET time_taken = ?, tab_switches = ?, status = "completed", submitted_at = ?, student_name = ?, reg_no = ?, dept = ?, year = ? WHERE id = ?',
+                "UPDATE attempts SET time_taken = ?, tab_switches = ?, status = 'completed', submitted_at = ?, student_name = ?, reg_no = ?, dept = ?, year = ? WHERE id = ?",
                 [
-                    time_taken, 
-                    tab_switches || 0, 
+                    time_taken,
+                    tab_switches || 0,
                     finished_at || new Date(),
                     student_details?.name || null,
                     student_details?.regNo || null,
@@ -84,13 +84,13 @@ router.post('/submit', auth, async (req, res) => {
             await pool.execute('DELETE FROM answers WHERE attempt_id = ?', [attemptId]);
         } else {
             const [attemptResult] = await pool.execute(
-                'INSERT INTO attempts (user_id, quiz_id, time_taken, tab_switches, status, started_at, submitted_at, student_name, reg_no, dept, year) VALUES (?, ?, ?, ?, "completed", ?, ?, ?, ?, ?, ?)',
+                "INSERT INTO attempts (user_id, quiz_id, time_taken, tab_switches, status, started_at, submitted_at, student_name, reg_no, dept, year) VALUES (?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, ?)",
                 [
-                    req.user.id, 
-                    quiz_id, 
-                    time_taken, 
-                    tab_switches || 0, 
-                    started_at || new Date(), 
+                    req.user.id,
+                    quiz_id,
+                    time_taken,
+                    tab_switches || 0,
+                    started_at || new Date(),
                     finished_at || new Date(),
                     student_details?.name || null,
                     student_details?.regNo || null,
@@ -121,7 +121,7 @@ router.post('/submit', auth, async (req, res) => {
                 } else if (q.type === 'matching') {
                     isCorrect = uAns === cAns; // Exact matching string comparison
                 }
-                
+
                 if (isCorrect) {
                     score += (q.points || 1);
                 } else {
@@ -208,10 +208,10 @@ router.get('/export/:quizId', auth, checkRole(['staff', 'admin']), async (req, r
         const csvRows = [
             ['Name', 'Score', 'Duration (s)', 'Started At', 'Finished At'],
             ...results.map(r => [
-                r.name, 
-                r.score, 
-                r.time_taken, 
-                new Date(r.started_at).toLocaleString(), 
+                r.name,
+                r.score,
+                r.time_taken,
+                new Date(r.started_at).toLocaleString(),
                 new Date(r.finished_at).toLocaleString()
             ])
         ];
@@ -230,13 +230,13 @@ router.get('/export/:quizId', auth, checkRole(['staff', 'admin']), async (req, r
 router.get('/user-stats', auth, async (req, res) => {
     try {
         const userId = req.user.id;
-        
+
         // Total Score (XP) and attempts
         const [xpRes] = await pool.execute(
             'SELECT COALESCE(SUM(score), 0) as totalXP, COUNT(*) as totalAttempts FROM attempts WHERE user_id = ? AND status = "completed"',
             [userId]
         );
-        
+
         // Certificates - use COALESCE to handle NULL pass_percentage safely
         let certRes = [];
         try {
@@ -245,11 +245,11 @@ router.get('/user-stats', auth, async (req, res) => {
                     (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as total_questions
                 FROM attempts a 
                 JOIN quizzes q ON a.quiz_id = q.id 
-                WHERE a.user_id = ? AND a.status = 'completed'`, 
+                WHERE a.user_id = ? AND a.status = 'completed'`,
                 [userId]
             );
             certRes = certs.filter(c => c.total_questions > 0 && c.score >= (c.total_questions * c.pass_percentage / 100));
-        } catch(certErr) {
+        } catch (certErr) {
             console.error('Cert query error (non-fatal):', certErr.message);
         }
 
@@ -261,7 +261,7 @@ router.get('/user-stats', auth, async (req, res) => {
                 FROM attempts 
                 GROUP BY user_id
             ) as rankings 
-            WHERE total_xp > (SELECT COALESCE(SUM(score), 0) FROM attempts WHERE user_id = ?)`, 
+            WHERE total_xp > (SELECT COALESCE(SUM(score), 0) FROM attempts WHERE user_id = ?)`,
             [userId]
         );
         const rank = rankResult[0]?.user_rank || 1;
@@ -352,7 +352,7 @@ router.delete('/user/:id', auth, checkRole(['admin']), async (req, res) => {
         // Prevent deleting the main admin for safety (by email)
         const [user] = await pool.execute('SELECT email FROM users WHERE id = ?', [req.params.id]);
         if (user[0]?.email === 'admin@quizmaster.com') return res.status(403).json({ message: 'Cannot delete super-admin' });
-        
+
         await pool.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
         res.json({ message: 'User deleted' });
     } catch (err) {
