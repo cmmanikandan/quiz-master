@@ -6,26 +6,44 @@ import { motion } from 'framer-motion';
 import Certificate from '../components/Certificate';
 
 export default function Result() {
-    const { id } = useParams();
     const [result, setResult] = useState(null);
-    const [filter, setFilter] = useState('all'); // all, correct, wrong
+    const [filter, setFilter] = useState('all');
     const [expandedReview, setExpandedReview] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
     useEffect(() => {
         fetchResult();
-    }, []);
+    }, [id]);
 
     const fetchResult = async () => {
         try {
             const res = await api.get(`/attempt/result/${id}`);
             setResult(res.data);
+            fetchLeaderboard(res.data.attempt.quiz_id);
         } catch (err) {
-            alert('Error fetching result');
+            console.error('Error fetching result');
         }
     };
 
-    if (!result) return <div className="text-center mt-20">Loading Results...</div>;
+    const fetchLeaderboard = async (quizId) => {
+        try {
+            const res = await api.get(`/attempt/leaderboard/${quizId}`);
+            setLeaderboard(res.data);
+        } catch (err) {
+            console.error('Leaderboard error');
+        } finally {
+            setLoadingLeaderboard(false);
+        }
+    };
+
+    if (!result) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest animate-pulse font-mono">Calculating Performance...</p>
+        </div>
+    );
 
     const { attempt, answers } = result;
     const filteredAnswers = answers.filter(a => {
@@ -152,6 +170,81 @@ export default function Result() {
                     ))}
                 </motion.div>
             )}
+
+            {/* Leaderboard Section */}
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass p-8 md:p-10 rounded-[32px] border-white/5 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 blur-[100px] -z-10"></div>
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="p-3 bg-yellow-500/10 text-yellow-500 rounded-xl border border-yellow-500/20">
+                        <Trophy size={28} />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black uppercase tracking-tighter">Leaderboard</h2>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Global Top 10 Performances</p>
+                    </div>
+                </div>
+
+                {loadingLeaderboard ? (
+                    <div className="flex justify-center py-10">
+                        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-slate-500 text-[10px] uppercase tracking-[0.2em] font-black italic">
+                                    <th className="pb-6 pl-4">Rank</th>
+                                    <th className="pb-6">Competitor</th>
+                                    <th className="pb-6">Score</th>
+                                    <th className="pb-6">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {leaderboard.map((entry, index) => (
+                                    <tr key={index} className={`group hover:bg-white/[0.02] transition-all ${entry.name === user.name ? 'bg-primary-500/10' : ''}`}>
+                                        <td className="py-5 pl-4">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-yellow-500 text-slate-950 scale-110 shadow-[0_0_20px_rgba(234,179,8,0.3)]' :
+                                                    index === 1 ? 'bg-slate-300 text-slate-950' :
+                                                        index === 2 ? 'bg-orange-500 text-slate-950' :
+                                                            'bg-white/5 text-slate-400'
+                                                }`}>
+                                                {index + 1}
+                                            </div>
+                                        </td>
+                                        <td className="py-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-white/10 flex items-center justify-center text-[10px] font-black uppercase">
+                                                    {entry.name.substring(0, 2)}
+                                                </div>
+                                                <span className={`font-bold ${entry.name === user.name ? 'text-primary-400' : 'text-slate-200'}`}>
+                                                    {entry.name}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="py-5">
+                                            <div className="flex items-center gap-1">
+                                                <span className="font-black text-white">{entry.score.toFixed(1)}</span>
+                                                <span className="text-[10px] text-slate-500 font-bold uppercase italic">XP</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-5">
+                                            <div className="flex items-center gap-2 text-slate-400 text-sm font-mono">
+                                                <Clock size={14} className="opacity-40" />
+                                                {entry.time_taken}s
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {leaderboard.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="py-10 text-center text-slate-500 font-bold uppercase tracking-widest text-xs italic">Awaiting first session finalization...</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </motion.div>
         </div>
     );
 }
