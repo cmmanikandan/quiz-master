@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS answers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     attempt_id INT NOT NULL,
     question_id INT NOT NULL,
-    selected_option ENUM('a', 'b', 'c', 'd'),
+    selected_option TEXT,
     is_correct BOOLEAN,
     FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
