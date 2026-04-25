@@ -14,6 +14,7 @@ const quizRoutes = require('./routes/quiz');
 const attemptRoutes = require('./routes/attempt');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
@@ -41,6 +42,16 @@ app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 
 // Routes
+app.get('/api/status', async (req, res) => {
+    try {
+        const pool = require('./config/db');
+        await pool.query('SELECT 1');
+        res.json({ status: 'Backend & DB Online', timestamp: new Date() });
+    } catch (err) {
+        res.status(500).json({ status: 'Error', message: err.message });
+    }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/attempt', attemptRoutes);
