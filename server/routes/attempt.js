@@ -10,7 +10,7 @@ router.get('/status/:code', auth, async (req, res) => {
         if (quiz.length === 0) return res.status(404).json({ message: "Quiz not found" });
 
         const [attempt] = await pool.execute(
-            'SELECT * FROM attempts WHERE user_id = ? AND quiz_id = ? AND (status = "ongoing" OR status = "blocked") ORDER BY submitted_at DESC LIMIT 1',
+            "SELECT * FROM attempts WHERE user_id = ? AND quiz_id = ? AND (status = 'ongoing' OR status = 'blocked') ORDER BY submitted_at DESC LIMIT 1",
             [req.user.id, quiz[0].id]
         );
 
@@ -32,7 +32,7 @@ router.post('/save-progress/:code', auth, async (req, res) => {
         if (quiz.length === 0) return res.status(404).json({ message: "Quiz not found" });
 
         const [attempt] = await pool.execute(
-            'SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status = "ongoing" LIMIT 1',
+            "SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status = 'ongoing' LIMIT 1",
             [req.user.id, quiz[0].id]
         );
 
@@ -43,7 +43,7 @@ router.post('/save-progress/:code', auth, async (req, res) => {
             );
         } else {
             await pool.execute(
-                'INSERT INTO attempts (user_id, quiz_id, status, responses, tab_switches, started_at) VALUES (?, ?, "ongoing", ?, ?, ?)',
+                "INSERT INTO attempts (user_id, quiz_id, status, responses, tab_switches, started_at) VALUES (?, ?, 'ongoing', ?, ?, ?)",
                 [req.user.id, quiz[0].id, JSON.stringify(answers), tab_switches, new Date()]
             );
         }
@@ -60,7 +60,7 @@ router.post('/submit', auth, async (req, res) => {
     try {
         // Find existing non-completed attempt
         const [existing] = await pool.execute(
-            'SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status != "completed" LIMIT 1',
+            "SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status != 'completed' LIMIT 1",
             [req.user.id, quiz_id]
         );
 
