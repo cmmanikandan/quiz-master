@@ -56,8 +56,12 @@ export default function StaffReport() {
             const quizRes = await api.get(`/quiz/${id}/edit-details`);
             const attemptsRes = await api.get(`/quiz/${id}/attempts`);
             setQuiz(quizRes.data.quiz);
-            setAttempts(attemptsRes.data);
-            calculateStats(attemptsRes.data, quizRes.data.quiz);
+            if (Array.isArray(attemptsRes.data)) {
+                setAttempts(attemptsRes.data);
+                calculateStats(attemptsRes.data, quizRes.data.quiz);
+            } else {
+                setAttempts([]);
+            }
         } catch (err) {
             console.error(err);
         }

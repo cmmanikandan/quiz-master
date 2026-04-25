@@ -36,7 +36,12 @@ export default function StaffBoard() {
     const fetchQuizQuestions = async () => {
         try {
             const res = await api.get(`/quiz/${selectedQuiz}/edit-details`);
-            setQuizQuestions(res.data.questions);
+            const qArr = res.data.questions;
+            if (Array.isArray(qArr)) {
+                setQuizQuestions(qArr);
+            } else {
+                setQuizQuestions([]);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -52,7 +57,11 @@ export default function StaffBoard() {
 
     const fetchQuizzes = async () => {
         const res = await api.get('/quiz/my-quizzes');
-        setQuizzes(res.data);
+        if (Array.isArray(res.data)) {
+            setQuizzes(res.data);
+        } else {
+            setQuizzes([]);
+        }
     };
 
     const handleDelete = async (id) => {
@@ -297,7 +306,7 @@ export default function StaffBoard() {
                 {/* Quiz List */}
                 <div className={selectedQuiz ? 'lg:col-span-1 space-y-3' : 'sm:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
                     {!selectedQuiz && <div className="col-span-full border-b border-white/5 pb-3"><h2 className="text-xs font-bold uppercase text-slate-500 tracking-widest">Your Quizzes</h2></div>}
-                    {quizzes.map(quiz => (
+                    {Array.isArray(quizzes) && quizzes.map(quiz => (
                         <div
                             key={quiz.id}
                             className={`bg-[#1e293b] p-4 sm:p-5 rounded-2xl border transition-all duration-300 relative group overflow-hidden ${selectedQuiz === quiz.id ? 'border-primary-500 ring-2 ring-primary-500/10' : 'border-white/5 hover:border-primary-500/30'}`}
@@ -645,7 +654,7 @@ export default function StaffBoard() {
                                             <p className="text-xs font-bold text-slate-600">No questions added yet</p>
                                         </div>
                                     ) : (
-                                        quizQuestions.map((q, idx) => (
+                                        Array.isArray(quizQuestions) && quizQuestions.map((q, idx) => (
                                             <div
                                                 key={q.id}
                                                 onClick={() => handleEditQuestion(q)}

@@ -36,7 +36,11 @@ export default function Home() {
         setLoading(true);
         try {
             const res = await api.get(`/quiz/public?category=${activeCategory}&search=${search}`);
-            setQuizzes(res.data);
+            if (Array.isArray(res.data)) {
+                setQuizzes(res.data);
+            } else {
+                setQuizzes([]);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -143,7 +147,7 @@ export default function Home() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <AnimatePresence>
-                                {quizzes.map((quiz) => (
+                                {Array.isArray(quizzes) && quizzes.map((quiz) => (
                                     <motion.div
                                         key={quiz.id}
                                         initial={{ opacity: 0 }}
