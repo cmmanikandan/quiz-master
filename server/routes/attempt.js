@@ -110,22 +110,20 @@ router.post('/submit', auth, async (req, res) => {
             const userAnswer = answers.find(a => a.question_id === q.id);
             let isCorrect = false;
 
-            if (userAnswer && userAnswer.selected_option) {
+            if (userAnswer && userAnswer.selected_option && q.correct_option) {
                 const uAns = userAnswer.selected_option.toString().trim();
                 const cAns = q.correct_option.toString().trim();
 
-                if (q.type === 'mcq' || q.type === 'tf') {
-                    isCorrect = uAns.toLowerCase() === cAns.toLowerCase();
-                } else if (q.type === 'short' || q.type === 'blank') {
+                if (q.type === 'mcq' || q.type === 'tf' || q.type === 'short' || q.type === 'blank') {
                     isCorrect = uAns.toLowerCase() === cAns.toLowerCase();
                 } else if (q.type === 'matching') {
-                    isCorrect = uAns === cAns; // Exact matching string comparison
+                    isCorrect = uAns === cAns;
                 }
 
                 if (isCorrect) {
                     score += (q.points || 1);
                 } else {
-                    score -= parseFloat(negMarking);
+                    score -= parseFloat(negMarking || 0);
                 }
             }
 
