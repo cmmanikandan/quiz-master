@@ -132,6 +132,13 @@ export default function QuizPlayer() {
         }
         setAnswers(newAnswers);
         syncProgress(newAnswers);
+
+        // Auto-next feature: move to next question after 400ms
+        if (currentIdx < questions.length - 1) {
+            setTimeout(() => {
+                setCurrentIdx(prev => prev + 1);
+            }, 400);
+        }
     };
 
     const syncProgress = async (currentAnswers) => {
