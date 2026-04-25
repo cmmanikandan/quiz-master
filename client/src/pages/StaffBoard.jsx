@@ -109,9 +109,9 @@ export default function StaffBoard() {
         e.preventDefault();
         if (!csvFile || !selectedQuiz) return;
         const data = new FormData();
-        data.append('csv', csvFile);
+        data.append('file', csvFile);
         try {
-            await api.post(`/quiz/${selectedQuiz}/upload`, data);
+            await api.post(`/quiz/${selectedQuiz}/upload-csv`, data);
             alert('Questions uploaded successfully');
             setCsvFile(null);
             fetchQuizQuestions();
@@ -650,8 +650,8 @@ export default function StaffBoard() {
                                                 key={q.id}
                                                 onClick={() => handleEditQuestion(q)}
                                                 className={`p-4 rounded-xl border cursor-pointer transition-all group ${editingQuestionId === q.id
-                                                        ? 'bg-primary-600/10 border-primary-500/40'
-                                                        : 'bg-white/[0.02] border-white/5 hover:border-primary-500/30 hover:bg-white/5'
+                                                    ? 'bg-primary-600/10 border-primary-500/40'
+                                                    : 'bg-white/[0.02] border-white/5 hover:border-primary-500/30 hover:bg-white/5'
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
