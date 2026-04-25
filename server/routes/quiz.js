@@ -17,19 +17,19 @@ router.get('/public', async (req, res) => {
             LEFT JOIN users u ON q.created_by = u.id 
             WHERE q.is_public = TRUE AND q.quiz_type = 'async'`;
         let params = [];
-        
+
         if (category && category !== 'All') {
             query += ' AND q.category = ?';
             params.push(category);
         }
-        
+
         if (search) {
             query += ' AND (q.title LIKE ? OR q.description LIKE ?)';
             params.push(`%${search}%`, `%${search}%`);
         }
-        
+
         query += ' ORDER BY q.created_at DESC LIMIT 20';
-        
+
         const [quizzes] = await pool.execute(query, params);
         res.json(quizzes);
     } catch (err) {
@@ -61,7 +61,7 @@ router.get('/join/:code', auth, async (req, res) => {
         if (quizzes.length === 0) return res.status(404).json({ message: "Quiz not found" });
 
         const quiz = quizzes[0];
-        
+
         // Check if user is blocked
         const [attempts] = await pool.execute('SELECT status FROM attempts WHERE quiz_id = ? AND user_id = ? ORDER BY started_at DESC LIMIT 1', [quiz.id, req.user.id]);
         if (attempts.length > 0 && attempts[0].status === 'blocked') {
@@ -106,6 +106,22 @@ router.post('/:id/questions', auth, checkRole(['staff', 'admin']), async (req, r
     }
 });
 
+// Single Question Add
+router.post('/:id/add-question', auth, checkRole(['staff', 'admin']), async (req, res) => {
+    const { question, option_a, option_b, option_c, option_d, correct_option, explanation, type, points, image_url } = req.body;
+    const quizId = req.params.id;
+    try {
+        await pool.execute(
+            "INSERT INTO questions (quiz_id, question, option_a, option_b, option_c, option_d, correct_option, explanation, type, points, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [quizId, question, option_a, option_b, option_c, option_d, correct_option, explanation, type || 'mcq', points || 1, image_url || null]
+        );
+        res.json({ message: "Question added successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // CSV Upload
 router.post('/:id/upload-csv', auth, checkRole(['staff', 'admin']), upload.single('file'), async (req, res) => {
     const quizId = req.params.id;
@@ -118,7 +134,7 @@ router.post('/:id/upload-csv', auth, checkRole(['staff', 'admin']), upload.singl
         .on('end', async () => {
             try {
                 if (results.length === 0) throw new Error("CSV file is empty or headers are incorrect");
-                
+
                 for (let q of results) {
                     const questionText = q.question || q.text || q.q || q['question text'] || q.title || 'New Question';
                     const optA = q.option_a || q.a || q.option1 || '';
@@ -130,15 +146,15 @@ router.post('/:id/upload-csv', auth, checkRole(['staff', 'admin']), upload.singl
                     await pool.execute(
                         'INSERT INTO questions (quiz_id, question, option_a, option_b, option_c, option_d, correct_option, explanation, type, points) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         [
-                            quizId, 
-                            questionText, 
-                            optA, 
-                            optB, 
-                            optC, 
-                            optD, 
-                            correctChoice.toString().toLowerCase(), 
-                            q.explanation || '', 
-                            q.type || 'mcq', 
+                            quizId,
+                            questionText,
+                            optA,
+                            optB,
+                            optC,
+                            optD,
+                            correctChoice.toString().toLowerCase(),
+                            q.explanation || '',
+                            q.type || 'mcq',
                             q.points || 1
                         ]
                     );
@@ -239,7 +255,7 @@ router.post('/block-my-attempt/:code', auth, async (req, res) => {
     try {
         const [quizzes] = await pool.execute('SELECT id FROM quizzes WHERE code = ?', [req.params.code]);
         if (quizzes.length === 0) return res.status(404).json({ message: "Quiz not found" });
-        
+
         await pool.execute(
             'UPDATE attempts SET status = "blocked" WHERE user_id = ? AND quiz_id = ? AND status = "active"',
             [req.user.id, quizzes[0].id]
@@ -286,7 +302,7 @@ router.post('/:id/invite', auth, checkRole(['staff', 'admin']), upload.single('c
                 // In a production app, you would use Nodemailer here to send actual emails.
                 // We'll log them to the console for this demonstration.
                 console.log(`Sending invites for Quiz ID ${req.params.id} to:`, emails);
-                
+
                 // Cleanup
                 fs.unlinkSync(req.file.path);
                 res.json({ message: `Invitations queued for ${emails.length} students` });
