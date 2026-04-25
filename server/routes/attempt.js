@@ -32,11 +32,16 @@ router.post('/save-progress/:code', auth, async (req, res) => {
         if (quiz.length === 0) return res.status(404).json({ message: "Quiz not found" });
 
         const [attempt] = await pool.execute(
-            "SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status = 'ongoing' LIMIT 1",
+            "SELECT id, status FROM attempts WHERE user_id = ? AND quiz_id = ? ORDER BY id DESC LIMIT 1",
             [req.user.id, quiz[0].id]
         );
 
-        if (attempt.length > 0) {
+        // Don't save progress if already completed
+        if (attempt.length > 0 && attempt[0].status === 'completed') {
+            return res.json({ message: "Already completed" });
+        }
+
+        if (attempt.length > 0 && attempt[0].status === 'ongoing') {
             await pool.execute(
                 'UPDATE attempts SET responses = ?, tab_switches = ? WHERE id = ?',
                 [JSON.stringify(answers), tab_switches, attempt[0].id]
@@ -127,10 +132,15 @@ router.post('/submit', auth, async (req, res) => {
                 }
             }
 
-            await pool.execute(
-                'INSERT INTO answers (attempt_id, question_id, selected_option, is_correct) VALUES (?, ?, ?, ?)',
-                [attemptId, q.id, userAnswer ? userAnswer.selected_option : null, isCorrect]
-            );
+            try {
+                await pool.execute(
+                    'INSERT INTO answers (attempt_id, question_id, selected_option, is_correct) VALUES (?, ?, ?, ?)',
+                    [attemptId, q.id, userAnswer ? (userAnswer.selected_option || null) : null, isCorrect ? 1 : 0]
+                );
+            } catch (ansErr) {
+                console.error(`Answer insert failed for question ${q.id}:`, ansErr.message);
+                // Continue grading other questions even if one fails
+            }
         }
 
         // Update final score

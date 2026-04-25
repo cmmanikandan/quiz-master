@@ -4,8 +4,11 @@ import api from '../api/axios';
 import { Trophy, Clock, CheckCircle, XCircle, ChevronDown, ListFilter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Certificate from '../components/Certificate';
+import { useAuth } from '../context/AuthContext';
 
 export default function Result() {
+    const { id } = useParams();
+    const { user } = useAuth();
     const [result, setResult] = useState(null);
     const [filter, setFilter] = useState('all');
     const [expandedReview, setExpandedReview] = useState(false);
@@ -52,7 +55,9 @@ export default function Result() {
         return true;
     });
 
-    const accuracy = Math.round((attempt.score / answers.length) * 100);
+    const score = parseFloat(attempt.score) || 0;
+    const correctCount = answers.filter(a => a.is_correct).length;
+    const accuracy = answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0;
     const isPass = accuracy >= (attempt.pass_percentage || 50);
 
     return (
@@ -71,9 +76,9 @@ export default function Result() {
                 <p className="text-base md:text-xl text-slate-400 mb-8 font-medium italic">"{attempt.title}"</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard icon={<CheckCircle className="text-green-400" />} label="Final Score" value={`${attempt.score.toFixed(1)} / ${answers.length}`} />
-                    <StatCard icon={<Clock className="text-blue-400" />} label="Time Spent" value={`${attempt.time_taken}s`} />
-                    <StatCard icon={<ListFilter className="text-purple-400" />} label="Correct" value={`${answers.filter(a => a.is_correct).length}`} />
+                    <StatCard icon={<CheckCircle className="text-green-400" />} label="Final Score" value={`${score.toFixed(1)} / ${answers.length}`} />
+                    <StatCard icon={<Clock className="text-blue-400" />} label="Time Spent" value={`${attempt.time_taken || 0}s`} />
+                    <StatCard icon={<ListFilter className="text-purple-400" />} label="Correct" value={`${correctCount}`} />
                     <StatCard icon={<Trophy className="text-yellow-400" />} label="Accuracy" value={`${accuracy}%`} />
                 </div>
 

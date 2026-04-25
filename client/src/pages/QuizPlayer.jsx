@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronRight, ChevronLeft, Send, AlertTriangle, Users, Zap, RefreshCw } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Send, AlertTriangle, Users, Zap, RefreshCw, CheckCircle } from 'lucide-react';
 import socket from '../utils/socket';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,6 +30,7 @@ export default function QuizPlayer() {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
     const timerRef = useRef(null);
+    const isSubmittingRef = useRef(false);
 
     const syncStatus = async () => {
         try {
@@ -234,6 +235,8 @@ export default function QuizPlayer() {
 
     const handleSubmit = async (isAuto = false) => {
         if (isBlocked) return;
+        if (isSubmittingRef.current) return; // Prevent double submit
+        isSubmittingRef.current = true;
         setIsFinishing(true);
         setSubmissionStatus('submitting');
 
@@ -259,9 +262,9 @@ export default function QuizPlayer() {
                 student_details: studentForm
             });
 
-            // More robust success check: either boolean true or HTTP 200/201
-            if (res.data.success === true || res.status === 200 || res.status === 201) {
+            if (res.status === 200 || res.status === 201) {
                 setSubmissionStatus('success');
+                const finalAttemptId = res.data.attemptId || res.data.attempt_id || attemptId;
                 socket.emit('new_submission', {
                     quizCode: code,
                     userName: res.data.user_name || user.name,
@@ -276,14 +279,15 @@ export default function QuizPlayer() {
                 }
 
                 setTimeout(() => {
-                    navigate(`/result/${res.data.attempt_id || res.data.attemptId || attemptId}`);
+                    navigate(`/result/${finalAttemptId}`);
                 }, 1000);
             } else {
-                throw new Error("Submission failed on server");
+                throw new Error("Server returned failure");
             }
 
         } catch (err) {
-            console.error("Submission Error:", err);
+            console.error("Submission Error:", err.response?.data || err.message);
+            isSubmittingRef.current = false;
             setSubmissionStatus('retrying');
             saveToVault(answers, currentIdx, timeLeft);
 
