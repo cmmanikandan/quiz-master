@@ -25,6 +25,9 @@ export default function QuizPlayer() {
     const [studentForm, setStudentForm] = useState({ name: '', regNo: '', dept: '', year: '' });
     const [attemptId, setAttemptId] = useState(null);
     const [isFinishing, setIsFinishing] = useState(false);
+    const [submissionStatus, setSubmissionStatus] = useState('idle'); // idle, submitting, retrying, saved, success
+    const [retryCount, setRetryCount] = useState(0);
+    const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
     const timerRef = useRef(null);
 
@@ -52,6 +55,35 @@ export default function QuizPlayer() {
     };
 
 
+    const saveToVault = (currentAnswers, index, time) => {
+        if (!quiz || !user) return;
+        const vaultKey = `quiz_backup_${code}_${user.id}`;
+        localStorage.setItem(vaultKey, JSON.stringify({
+            answers: currentAnswers,
+            currentIdx: index,
+            timeLeft: time,
+            timestamp: new Date().getTime()
+        }));
+    };
+
+    const restoreFromVault = () => {
+        const vaultKey = `quiz_backup_${code}_${user.id}`;
+        const saved = localStorage.getItem(vaultKey);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                setAnswers(data.answers || []);
+                setCurrentIdx(data.currentIdx || 0);
+                if (data.timeLeft !== undefined) setTimeLeft(data.timeLeft);
+                console.log("Session restored from local vault");
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        return false;
+    };
+
     const handleBlockUser = async () => {
         if (isBlocked) return;
         setIsBlocked(true);
@@ -65,11 +97,17 @@ export default function QuizPlayer() {
     useEffect(() => {
         const initialize = async () => {
             await fetchQuiz();
-            await syncStatus();
+            const restored = restoreFromVault();
+            if (!restored) await syncStatus();
             setLoading(false);
         };
         initialize();
         socket.connect();
+
+        const handleOnline = () => setIsOffline(false);
+        const handleOffline = () => setIsOffline(true);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
 
         const handleVisibilityChange = () => {
             if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
@@ -97,6 +135,8 @@ export default function QuizPlayer() {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             document.removeEventListener("fullscreenchange", handleFullscreenChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
             socket.disconnect();
         };
     }, [isLiveReady, loading, isBlocked, isFinishing]);
@@ -171,6 +211,7 @@ export default function QuizPlayer() {
         }
         setAnswers(newAnswers);
         syncProgress(newAnswers);
+        saveToVault(newAnswers, currentIdx, timeLeft);
 
         // Auto-next feature: move to next question after 400ms
         if (currentIdx < questions.length - 1) {
@@ -194,10 +235,12 @@ export default function QuizPlayer() {
     const handleSubmit = async (isAuto = false) => {
         if (isBlocked) return;
         setIsFinishing(true);
+        setSubmissionStatus('submitting');
 
-        if (!isAuto) {
+        if (!isAuto && retryCount === 0) {
             if (!window.confirm("CONFIRM SUBMISSION: Are you sure you want to finalize your assessment?")) {
                 setIsFinishing(false);
+                setSubmissionStatus('idle');
                 return;
             }
         }
@@ -216,20 +259,41 @@ export default function QuizPlayer() {
                 student_details: studentForm
             });
 
-            socket.emit('new_submission', {
-                quizCode: code,
-                userName: res.data.user_name || user.name,
-                score: res.data.score
-            });
+            if (res.data.success || res.status === 200) {
+                setSubmissionStatus('success');
+                socket.emit('new_submission', {
+                    quizCode: code,
+                    userName: res.data.user_name || user.name,
+                    score: res.data.score
+                });
 
-            if (document.fullscreenElement) {
-                try { await document.exitFullscreen(); } catch (e) { }
+                // Clear vault on success
+                localStorage.removeItem(`quiz_backup_${code}_${user.id}`);
+
+                if (document.fullscreenElement) {
+                    try { await document.exitFullscreen(); } catch (e) { }
+                }
+
+                setTimeout(() => {
+                    navigate(`/result/${res.data.attempt_id || res.data.attemptId || attemptId}`);
+                }, 1000);
+            } else {
+                throw new Error("Submission failed on server");
             }
 
-            navigate(`/result/${res.data.attempt_id || res.data.attemptId || attemptId}`);
         } catch (err) {
             console.error("Submission Error:", err);
-            alert('CRITICAL: Submission failed. We are attempting to cache your answers. Do not close this tab.');
+            setSubmissionStatus('retrying');
+            saveToVault(answers, currentIdx, timeLeft);
+
+            if (retryCount < 5) {
+                const nextRetry = retryCount + 1;
+                setRetryCount(nextRetry);
+                console.log(`Automatic retry ${nextRetry}/5 in 5 seconds...`);
+                setTimeout(() => handleSubmit(true), 5000);
+            } else {
+                setSubmissionStatus('saved');
+            }
         }
     };
 
@@ -262,11 +326,58 @@ export default function QuizPlayer() {
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest animate-pulse font-mono">Syncing Session...</p>
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] animate-pulse font-mono text-xs">Syncing Session Vault...</p>
         </div>
     );
 
+
+    if (isFinishing) {
+        return (
+            <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-lg w-full text-center border-white/10 shadow-3xl">
+                    <div className="mb-8">
+                        {submissionStatus === 'success' ? (
+                            <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                                <CheckCircle size={48} />
+                            </div>
+                        ) : submissionStatus === 'retrying' || submissionStatus === 'submitting' ? (
+                            <div className="w-24 h-24 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        ) : (
+                            <div className="w-24 h-24 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto">
+                                <AlertTriangle size={48} />
+                            </div>
+                        )}
+                    </div>
+
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">
+                        {submissionStatus === 'success' ? 'Synchronized!' :
+                            submissionStatus === 'submitting' ? 'Finalizing...' :
+                                submissionStatus === 'retrying' ? 'Network Congestion' : 'Local Backup Active'}
+                    </h2>
+
+                    <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                        {submissionStatus === 'success' ? 'Your performance data has been secured on the cloud.' :
+                            submissionStatus === 'submitting' ? 'Encrypting and transmitting your responses...' :
+                                submissionStatus === 'retrying' ? `⚠️ Network issue detected. Your answers are safely saved. Autoretry attempt ${retryCount}/5...` :
+                                    '⚠️ Connection failure persistent. Your answers are safely stored in the local vault. Please stay on this page.'}
+                    </p>
+
+                    {submissionStatus === 'saved' && (
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => handleSubmit(true)}
+                                className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-xl"
+                            >
+                                <RefreshCw size={18} className={submissionStatus === 'submitting' ? 'animate-spin' : ''} /> Retry Transmission Now
+                            </button>
+                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest italic">Manual synchronization is highly recommended</p>
+                        </div>
+                    )}
+                </motion.div>
+            </div>
+        );
+    }
 
     if (isBlocked) {
         return (
@@ -414,6 +525,11 @@ export default function QuizPlayer() {
                         </div>
                     </div>
                     <div className="flex items-center gap-10">
+                        {isOffline && (
+                            <div className="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-yellow-500/20 animate-pulse">
+                                <Zap size={12} fill="currentColor" /> Offline Mode
+                            </div>
+                        )}
                         {timeLeft !== null && (
                             <div className={`flex items-center gap-3 text-4xl font-black italic tracking-tighter ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
                                 <Clock size={32} className="opacity-20" /> {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}

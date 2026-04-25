@@ -138,10 +138,20 @@ router.post('/submit', auth, async (req, res) => {
         // Update final score
         await pool.execute('UPDATE attempts SET score = ? WHERE id = ?', [score, attemptId]);
 
-        res.json({ message: "Quiz submitted", attemptId, score, user_name: req.user.name });
+        res.json({
+            success: true,
+            message: "Quiz submitted successfully",
+            attemptId,
+            score,
+            user_name: req.user.name
+        });
     } catch (err) {
         console.error("Submit Error:", err);
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            success: false,
+            message: "Submission failed, please retry",
+            error: err.message
+        });
     }
 });
 
