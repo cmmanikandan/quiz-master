@@ -4,6 +4,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+
 const authRoutes = require('./routes/auth');
 const quizRoutes = require('./routes/quiz');
 const attemptRoutes = require('./routes/attempt');
@@ -12,18 +17,42 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: process.env.CLIENT_URL || "*",
         methods: ["GET", "POST"]
     }
 });
 
-app.use(cors());
+// Security & Optimization Middleware
+app.use(helmet({ crossOriginResourcePolicy: false })); // Basic security headers
+app.use(compression()); // Gzip compression
+app.use(morgan('combined')); // Production logging
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window`
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api', limiter);
+
+// Basic middleware
+app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/attempt', attemptRoutes);
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+        message: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    });
+});
 
 // Socket.io logic
 io.on('connection', (socket) => {

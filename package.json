@@ -1,0 +1,11 @@
+{
+    "name": "quizmaster",
+    "private": true,
+    "workspaces": [
+        "client",
+        "server"
+    ],
+    "scripts": {
+        "build:client": "cd client && npm install && npm run build"
+    }
+}

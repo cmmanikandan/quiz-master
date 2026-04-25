@@ -77,3 +77,11 @@ CREATE TABLE IF NOT EXISTS answers (
     FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
+
+-- Performance Indexes
+CREATE INDEX idx_quizzes_code ON quizzes(code);
+CREATE INDEX idx_quizzes_created_by ON quizzes(created_by);
+CREATE INDEX idx_questions_quiz_id ON questions(quiz_id);
+CREATE INDEX idx_attempts_user_id ON attempts(user_id);
+CREATE INDEX idx_attempts_quiz_id ON attempts(quiz_id);
+CREATE INDEX idx_answers_attempt_id ON answers(attempt_id);

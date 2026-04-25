@@ -374,6 +374,14 @@ export default function QuizPlayer() {
     const currentQ = questions[currentIdx];
     const userAns = answers.find(a => a.question_id === currentQ?.id)?.selected_option;
 
+    // Guard: questions not yet loaded or index out of range
+    if (!currentQ) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest animate-pulse text-sm">Loading Questions...</p>
+        </div>
+    );
+
     return (
         <div className="min-h-screen -m-8 p-8 transition-all duration-1000 bg-slate-950">
             <div className="max-w-5xl mx-auto space-y-8">

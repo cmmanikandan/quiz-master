@@ -230,24 +230,28 @@ router.get('/export/:quizId', auth, checkRole(['staff', 'admin']), async (req, r
 router.get('/user-stats', auth, async (req, res) => {
     try {
         const userId = req.user.id;
-        console.log(`Fetching stats for user: ${userId}`);
         
         // Total Score (XP) and attempts
-        const [xpRes] = await pool.execute('SELECT COALESCE(SUM(score), 0) as totalXP, COUNT(*) as totalAttempts FROM attempts WHERE user_id = ?', [userId]);
-        
-        // Certificates (Passed Attempts)
-        // Simplified pass check: score >= (total_questions * pass_percentage / 100)
-        const [certRes] = await pool.execute(`
-            SELECT a.*, q.title as quizTitle, q.pass_percentage, u.name as user_name
-            FROM attempts a 
-            JOIN quizzes q ON a.quiz_id = q.id 
-            JOIN users u ON a.user_id = u.id
-            WHERE a.user_id = ? 
-            AND a.score >= (
-                (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) * q.pass_percentage / 100
-            )`, 
+        const [xpRes] = await pool.execute(
+            'SELECT COALESCE(SUM(score), 0) as totalXP, COUNT(*) as totalAttempts FROM attempts WHERE user_id = ? AND status = "completed"',
             [userId]
         );
+        
+        // Certificates - use COALESCE to handle NULL pass_percentage safely
+        let certRes = [];
+        try {
+            const [certs] = await pool.execute(`
+                SELECT a.id, a.score, q.title as quizTitle, COALESCE(q.pass_percentage, 50) as pass_percentage,
+                    (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as total_questions
+                FROM attempts a 
+                JOIN quizzes q ON a.quiz_id = q.id 
+                WHERE a.user_id = ? AND a.status = 'completed'`, 
+                [userId]
+            );
+            certRes = certs.filter(c => c.total_questions > 0 && c.score >= (c.total_questions * c.pass_percentage / 100));
+        } catch(certErr) {
+            console.error('Cert query error (non-fatal):', certErr.message);
+        }
 
         // Rank calculation
         const [rankResult] = await pool.execute(`
@@ -264,13 +268,13 @@ router.get('/user-stats', auth, async (req, res) => {
 
         res.json({
             xp: parseFloat(xpRes[0].totalXP) || 0,
-            attempts: xpRes[0].totalAttempts || 0,
-            certificates: certRes || [],
+            attempts: parseInt(xpRes[0].totalAttempts) || 0,
+            certificates: certRes,
             rank: rank
         });
     } catch (err) {
-        console.error("User Stats Error:", err);
-        res.status(500).json({ message: "Internal server error while fetching stats" });
+        console.error('User Stats Error:', err);
+        res.status(500).json({ message: 'Internal server error while fetching stats: ' + err.message });
     }
 });
 

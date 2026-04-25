@@ -200,6 +200,66 @@ export default function Home() {
                     )}
                 </div>
             </div>
+
+            {/* Premium Footer */}
+            <footer className="mt-20 border-t border-white/5 bg-[#0f172a]/50 pt-16 pb-8">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                        {/* Brand Col */}
+                        <div className="col-span-1 md:col-span-2">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="bg-primary-600 p-2 rounded-xl text-white shadow-lg shadow-primary-500/20">
+                                    <BrainCircuit size={24} />
+                                </div>
+                                <span className="text-xl font-bold text-white tracking-tight">QuizMaster</span>
+                            </div>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
+                                The ultimate modern assessment platform. Build, deploy, and analyze professional quizzes with real-time proctoring and analytics.
+                            </p>
+                            <div className="flex gap-4">
+                                <a href="#" className="p-2 bg-white/5 text-slate-400 hover:text-primary-400 hover:bg-white/10 rounded-xl transition-all">
+                                    <Globe size={18} />
+                                </a>
+                                <a href="https://github.com/cmmanikandan" target="_blank" rel="noreferrer" className="p-2 bg-white/5 text-slate-400 hover:text-primary-400 hover:bg-white/10 rounded-xl transition-all">
+                                    <Code size={18} />
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Links Col 1 */}
+                        <div>
+                            <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-xs">Platform</h4>
+                            <ul className="space-y-4">
+                                <li><Link to="/register" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Create Account</Link></li>
+                                <li><Link to="/login" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Sign In</Link></li>
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Explore Quizzes</a></li>
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Leaderboards</a></li>
+                            </ul>
+                        </div>
+
+                        {/* Links Col 2 */}
+                        <div>
+                            <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-xs">Legal &amp; Support</h4>
+                            <ul className="space-y-4">
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Help Center</a></li>
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Privacy Policy</a></li>
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Terms of Service</a></li>
+                                <li><a href="#" className="text-slate-400 hover:text-primary-400 text-sm font-medium transition-colors">Contact Dept</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            &copy; {new Date().getFullYear()} QuizMaster System. All rights reserved.
+                        </p>
+                        <div className="flex gap-6">
+                            <span className="text-slate-600 text-xs font-bold uppercase tracking-widest">Built for Education</span>
+                            <span className="text-primary-900 text-xs font-black uppercase tracking-widest bg-primary-500/10 px-2 py-0.5 rounded border border-primary-500/20">v1.0.0</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
