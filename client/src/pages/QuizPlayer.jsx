@@ -24,13 +24,11 @@ export default function QuizPlayer() {
     const [hasSubmittedDetails, setHasSubmittedDetails] = useState(false);
     const [studentForm, setStudentForm] = useState({ name: '', regNo: '', dept: '', year: '' });
     const [attemptId, setAttemptId] = useState(null);
-    const [isFinishing, setIsFinishing] = useState(false);
-    const [submissionStatus, setSubmissionStatus] = useState('idle'); // idle, submitting, retrying, saved, success
-    const [retryCount, setRetryCount] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
     const timerRef = useRef(null);
-    const isSubmittingRef = useRef(false);
+    const submitDoneRef = useRef(false);
 
     const syncStatus = async () => {
         try {
@@ -111,19 +109,19 @@ export default function QuizPlayer() {
         window.addEventListener('offline', handleOffline);
 
         const handleVisibilityChange = () => {
-            if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
+            if (document.hidden && isLiveReady && !loading && !isBlocked && !isSubmitting) {
                 handleBlockUser();
             }
         };
 
         const handleBlur = () => {
-            if (isLiveReady && !loading && !isBlocked && !isFinishing) {
+            if (isLiveReady && !loading && !isBlocked && !isSubmitting) {
                 handleBlockUser();
             }
         };
 
         const handleFullscreenChange = () => {
-            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isFinishing) {
+            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isSubmitting) {
                 handleBlockUser();
             }
         };
@@ -140,7 +138,7 @@ export default function QuizPlayer() {
             window.removeEventListener('offline', handleOffline);
             socket.disconnect();
         };
-    }, [isLiveReady, loading, isBlocked, isFinishing]);
+    }, [isLiveReady, loading, isBlocked, isSubmitting]);
 
     const [shuffledOptions, setShuffledOptions] = useState({});
 
@@ -235,18 +233,15 @@ export default function QuizPlayer() {
 
     const handleSubmit = async (isAuto = false) => {
         if (isBlocked) return;
-        if (isSubmittingRef.current) return; // Prevent double submit
-        isSubmittingRef.current = true;
-        setIsFinishing(true);
-        setSubmissionStatus('submitting');
+        if (submitDoneRef.current) return;
+        if (isSubmitting) return;
 
-        if (!isAuto && retryCount === 0) {
-            if (!window.confirm("CONFIRM SUBMISSION: Are you sure you want to finalize your assessment?")) {
-                setIsFinishing(false);
-                setSubmissionStatus('idle');
-                return;
-            }
+        if (!isAuto) {
+            if (!window.confirm("Submit your assessment? This cannot be undone.")) return;
         }
+
+        submitDoneRef.current = true;
+        setIsSubmitting(true);
 
         try {
             const finishTime = new Date().toISOString();
@@ -262,43 +257,29 @@ export default function QuizPlayer() {
                 student_details: studentForm
             });
 
-            if (res.status === 200 || res.status === 201) {
-                setSubmissionStatus('success');
-                const finalAttemptId = res.data.attemptId || res.data.attempt_id || attemptId;
-                socket.emit('new_submission', {
-                    quizCode: code,
-                    userName: res.data.user_name || user.name,
-                    score: res.data.score
-                });
+            const finalAttemptId = res.data.attemptId || res.data.attempt_id || attemptId;
 
-                // Clear vault on success
-                localStorage.removeItem(`quiz_backup_${code}_${user.id}`);
+            socket.emit('new_submission', {
+                quizCode: code,
+                userName: res.data.user_name || user.name,
+                score: res.data.score
+            });
 
-                if (document.fullscreenElement) {
-                    try { await document.exitFullscreen(); } catch (e) { }
-                }
+            localStorage.removeItem(`quiz_backup_${code}_${user.id}`);
 
-                setTimeout(() => {
-                    navigate(`/result/${finalAttemptId}`);
-                }, 1000);
-            } else {
-                throw new Error("Server returned failure");
+            if (document.fullscreenElement) {
+                try { await document.exitFullscreen(); } catch (e) { }
             }
+
+            navigate(`/result/${finalAttemptId}`);
 
         } catch (err) {
             console.error("Submission Error:", err.response?.data || err.message);
-            isSubmittingRef.current = false;
-            setSubmissionStatus('retrying');
+            submitDoneRef.current = false;
+            setIsSubmitting(false);
+            // Save answers to localStorage as backup
             saveToVault(answers, currentIdx, timeLeft);
-
-            if (retryCount < 5) {
-                const nextRetry = retryCount + 1;
-                setRetryCount(nextRetry);
-                console.log(`Automatic retry ${nextRetry}/5 in 5 seconds...`);
-                setTimeout(() => handleSubmit(true), 5000);
-            } else {
-                setSubmissionStatus('saved');
-            }
+            alert(`Submission failed: ${err.response?.data?.message || err.message}. Your answers are saved locally. Please try again.`);
         }
     };
 
@@ -337,52 +318,15 @@ export default function QuizPlayer() {
     );
 
 
-    if (isFinishing) {
-        return (
-            <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-lg w-full text-center border-white/10 shadow-3xl">
-                    <div className="mb-8">
-                        {submissionStatus === 'success' ? (
-                            <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
-                                <CheckCircle size={48} />
-                            </div>
-                        ) : submissionStatus === 'retrying' || submissionStatus === 'submitting' ? (
-                            <div className="w-24 h-24 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                        ) : (
-                            <div className="w-24 h-24 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto">
-                                <AlertTriangle size={48} />
-                            </div>
-                        )}
-                    </div>
-
-                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">
-                        {submissionStatus === 'success' ? 'Synchronized!' :
-                            submissionStatus === 'submitting' ? 'Finalizing...' :
-                                submissionStatus === 'retrying' ? 'Network Congestion' : 'Local Backup Active'}
-                    </h2>
-
-                    <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                        {submissionStatus === 'success' ? 'Your performance data has been secured on the cloud.' :
-                            submissionStatus === 'submitting' ? 'Encrypting and transmitting your responses...' :
-                                submissionStatus === 'retrying' ? `⚠️ Network issue detected. Your answers are safely saved. Autoretry attempt ${retryCount}/5...` :
-                                    '⚠️ Connection failure persistent. Your answers are safely stored in the local vault. Please stay on this page.'}
-                    </p>
-
-                    {submissionStatus === 'saved' && (
-                        <div className="space-y-4">
-                            <button
-                                onClick={() => handleSubmit(true)}
-                                className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-xl"
-                            >
-                                <RefreshCw size={18} className={submissionStatus === 'submitting' ? 'animate-spin' : ''} /> Retry Transmission Now
-                            </button>
-                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest italic">Manual synchronization is highly recommended</p>
-                        </div>
-                    )}
-                </motion.div>
-            </div>
-        );
-    }
+    if (isSubmitting) return (
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-md w-full text-center border-white/10 shadow-3xl">
+                <div className="w-20 h-20 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-8"></div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-3">Submitting...</h2>
+                <p className="text-slate-400 text-sm">Please wait while your answers are being saved.</p>
+            </motion.div>
+        </div>
+    );
 
     if (isBlocked) {
         return (
