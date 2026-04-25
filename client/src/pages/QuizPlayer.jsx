@@ -71,21 +71,24 @@ export default function QuizPlayer() {
         socket.connect();
 
         const handleVisibilityChange = () => {
-            if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
-                handleBlockUser();
-            }
+            // Disabled per user request
+            // if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
+            //     handleBlockUser();
+            // }
         };
 
         const handleBlur = () => {
-            if (isLiveReady && !loading && !isBlocked && !isFinishing) {
-                handleBlockUser();
-            }
+            // Disabled per user request for smoother finish flow
+            // if (isLiveReady && !loading && !isBlocked && !isFinishing) {
+            //     handleBlockUser();
+            // }
         };
 
         const handleFullscreenChange = () => {
-            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isFinishing) {
-                handleBlockUser();
-            }
+            // Disabled per user request for smoother finish flow
+            // if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isFinishing) {
+            //     handleBlockUser();
+            // }
         };
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -184,11 +187,15 @@ export default function QuizPlayer() {
 
     const handleSubmit = async (isAuto = false) => {
         if (isBlocked) return;
-        if (!isAuto) {
-            if (!window.confirm("CONFIRM SUBMISSION: Are you sure you want to finalize your assessment?")) return;
-        }
 
         setIsFinishing(true);
+
+        if (!isAuto) {
+            if (!window.confirm("CONFIRM SUBMISSION: Are you sure you want to finalize your assessment?")) {
+                setIsFinishing(false);
+                return;
+            }
+        }
 
         try {
             const finishTime = new Date().toISOString();
