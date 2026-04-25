@@ -30,9 +30,7 @@ export default function QuizPlayer() {
         try {
             const res = await api.get(`/attempt/status/${code}`);
             if (res.data.hasActive) {
-                if (res.data.status === 'blocked') {
-                    setIsBlocked(true);
-                } else if (res.data.status === 'ongoing') {
+                if (res.data.status === 'ongoing' || res.data.status === 'blocked') {
                     // Resume logic
                     setAttemptId(res.data.attempt.id);
                     setWarnings(res.data.attempt.tab_switches || 0);
@@ -148,8 +146,6 @@ export default function QuizPlayer() {
     };
 
     const handleSubmit = async (isAuto = false) => {
-        if (isBlocked) return;
-
         setIsFinishing(true);
 
         if (!isAuto) {
