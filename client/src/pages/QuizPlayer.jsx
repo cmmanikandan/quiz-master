@@ -108,21 +108,34 @@ export default function QuizPlayer() {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        const handleVisibilityChange = () => {
-            if (document.hidden && isLiveReady && !loading && !isBlocked && !isSubmitting) {
-                handleBlockUser();
+        const handleViolation = () => {
+            if (isLiveReady && !loading && !isBlocked && !isSubmitting) {
+                const newWarnings = warnings + 1;
+                setWarnings(newWarnings);
+                
+                if (newWarnings >= 3) {
+                    handleBlockUser();
+                } else {
+                    // Force pause and show warning
+                    setIsFullScreen(false); 
+                }
             }
         };
 
-        const handleBlur = () => {
-            if (isLiveReady && !loading && !isBlocked && !isSubmitting) {
-                handleBlockUser();
-            }
+        const handleVisibilityChange = () => {
+            if (document.hidden) handleViolation();
         };
+
+        const handleBlur = () => handleViolation();
 
         const handleFullscreenChange = () => {
-            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isSubmitting) {
-                handleBlockUser();
+            if (!document.fullscreenElement) {
+                // If they didn't finish and aren't blocked, force them back in
+                if (isLiveReady && !loading && !isBlocked && !isSubmitting) {
+                    setIsFullScreen(false);
+                }
+            } else {
+                setIsFullScreen(true);
             }
         };
 
@@ -138,7 +151,7 @@ export default function QuizPlayer() {
             window.removeEventListener('offline', handleOffline);
             socket.disconnect();
         };
-    }, [isLiveReady, loading, isBlocked, isSubmitting]);
+    }, [isLiveReady, loading, isBlocked, isSubmitting, warnings]);
 
     const [shuffledOptions, setShuffledOptions] = useState({});
 
@@ -317,6 +330,39 @@ export default function QuizPlayer() {
         </div>
     );
 
+    if (!isFullScreen && isLiveReady && !isSubmitting && !isBlocked) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[500] p-6 text-center">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-lg border-primary-500/30 border-2">
+                    <div className="w-20 h-20 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                        <Zap size={40} />
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Secure Mode Exited</h2>
+                    <p className="text-slate-400 text-lg mb-8">
+                        The proctoring system requires <b>Fullscreen Mode</b>. 
+                        Warning: {warnings} / 3. 
+                        Exiting again may lead to disqualification.
+                    </p>
+                    <button 
+                        onClick={() => {
+                            const elem = document.documentElement;
+                            if (elem.requestFullscreen) elem.requestFullscreen();
+                            setIsFullScreen(true);
+                        }}
+                        className="btn-primary w-full py-4 text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary-500/20"
+                    >
+                        Re-enter Secure Mode
+                    </button>
+                </motion.div>
+            </div>
+        );
+    }
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] animate-pulse font-mono text-xs">Syncing Session Vault...</p>
+        </div>
+    );
+
 
     if (isSubmitting) return (
         <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6">
@@ -350,6 +396,45 @@ export default function QuizPlayer() {
                         <button onClick={() => navigate('/dashboard')} className="flex-1 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold transition-all">Exit Player</button>
                     </div>
                 </motion.div>
+            </div>
+        );
+    }
+
+    const [selectedTeam, setSelectedTeam] = useState(localStorage.getItem(`quiz_team_${code}`) || null);
+
+    const handleTeamSelect = (team) => {
+        setSelectedTeam(team);
+        localStorage.setItem(`quiz_team_${code}`, team);
+    };
+
+    if (quiz?.is_team && !selectedTeam) {
+        return (
+            <div className="fixed inset-0 bg-slate-950 flex items-center justify-center z-[1000] p-6">
+                <div className="max-w-4xl w-full text-center space-y-12">
+                    <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                        <h1 className="text-6xl font-black text-white uppercase tracking-tighter mb-4">Choose Your Faction</h1>
+                        <p className="text-slate-500 uppercase tracking-widest font-bold">The battle for {quiz.title} begins now</p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {['Alpha', 'Omega'].map((team, idx) => (
+                            <motion.button
+                                key={team}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleTeamSelect(team)}
+                                className={`p-10 rounded-[40px] border-4 transition-all flex flex-col items-center gap-6 ${
+                                    team === 'Alpha' ? 'bg-blue-500/10 border-blue-500/30 hover:border-blue-500' : 'bg-red-500/10 border-red-500/30 hover:border-red-500'
+                                }`}
+                            >
+                                <div className={`w-24 h-24 rounded-3xl flex items-center justify-center text-white font-black text-4xl ${team === 'Alpha' ? 'bg-blue-600' : 'bg-red-600'}`}>
+                                    {team[0]}
+                                </div>
+                                <h3 className="text-4xl font-black text-white uppercase tracking-tighter">{team} Legion</h3>
+                            </motion.button>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
@@ -463,14 +548,25 @@ export default function QuizPlayer() {
         <div className="min-h-screen -m-8 p-8 transition-all duration-1000 bg-slate-950">
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* HUD */}
-                <div className="flex justify-between items-center glass p-6 rounded-[32px] border-white/5 shadow-2xl">
+                <div className={`flex justify-between items-center glass p-6 rounded-[32px] shadow-2xl transition-all duration-500 ${
+                    selectedTeam === 'Alpha' ? 'border-blue-500/30 bg-blue-500/5' : 
+                    selectedTeam === 'Omega' ? 'border-red-500/30 bg-red-500/5' : 'border-white/5'
+                }`}>
                     <div className="flex items-center gap-6">
-                        <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-400 font-black border border-primary-500/20">
-                            {currentIdx + 1}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black border transition-all ${
+                            selectedTeam === 'Alpha' ? 'bg-blue-600 text-white border-blue-400' :
+                            selectedTeam === 'Omega' ? 'bg-red-600 text-white border-red-400' : 'bg-primary-500/10 text-primary-400 border-primary-500/20'
+                        }`}>
+                            {selectedTeam ? selectedTeam[0] : currentIdx + 1}
                         </div>
                         <div>
-                            <h1 className="text-xl font-black text-white uppercase tracking-tighter truncate max-w-md">{quiz.title}</h1>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Module Progress • {Math.round(((currentIdx + 1) / questions.length) * 100)}%</p>
+                            <h1 className="text-xl font-black text-white uppercase tracking-tighter truncate max-w-md">
+                                {selectedTeam && <span className={selectedTeam === 'Alpha' ? 'text-blue-500' : 'text-red-500'}>{selectedTeam} Legion • </span>}
+                                {quiz.title}
+                            </h1>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                {selectedTeam ? `Fighting for ${selectedTeam} Glory` : `Module Progress • ${Math.round(((currentIdx + 1) / questions.length) * 100)}%`}
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-10">

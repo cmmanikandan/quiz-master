@@ -312,4 +312,47 @@ router.post('/:id/invite', auth, checkRole(['staff', 'admin']), upload.single('c
         });
 });
 
+// Get Deep Analytics for a Quiz
+router.get('/:id/analytics', auth, checkRole(['staff', 'admin']), async (req, res) => {
+    try {
+        const quizId = req.params.id;
+
+        // 1. Question Accuracy Stats
+        const [stats] = await pool.execute(`
+            SELECT 
+                q.id, 
+                q.question, 
+                COUNT(ans.id) as total_responses,
+                SUM(CASE WHEN ans.is_correct = 1 THEN 1 ELSE 0 END) as correct_count
+            FROM questions q
+            LEFT JOIN answers ans ON q.id = ans.question_id
+            WHERE q.quiz_id = ?
+            GROUP BY q.id`,
+            [quizId]
+        );
+
+        // 2. Score Distribution (Histogram data)
+        const [distribution] = await pool.execute(`
+            SELECT 
+                FLOOR(score/10)*10 as score_bin, 
+                COUNT(*) as count 
+            FROM attempts 
+            WHERE quiz_id = ? AND status = 'completed'
+            GROUP BY score_bin 
+            ORDER BY score_bin ASC`,
+            [quizId]
+        );
+
+        res.json({
+            questionStats: stats.map(s => ({
+                ...s,
+                accuracy: s.total_responses > 0 ? Math.round((s.correct_count / s.total_responses) * 100) : 0
+            })),
+            scoreDistribution: distribution
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;

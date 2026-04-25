@@ -2,58 +2,70 @@ import { motion } from 'framer-motion';
 import { Award, Download, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
-export default function Certificate({ userName, quizTitle, score, date, passPercentage }) {
+export default function Certificate({ userName, quizTitle, score, date, passPercentage, attemptId }) {
     const handleDownload = async () => {
         const element = document.getElementById('certificate-template');
-        const canvas = await html2canvas(element, { scale: 3 });
+        const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#020617' });
         const data = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = data;
-        link.download = `${userName}_Certificate.png`;
+        link.download = `${userName}_NexQuiz_Credential.png`;
         link.click();
     };
 
+    const verifyUrl = `${window.location.origin}/verify/${attemptId}`;
+
     return (
-        <div className="space-y-6">
-            <div id="certificate-template" className="bg-white text-slate-900 p-16 rounded-sm border-[20px] border-double border-primary-900 relative w-[800px] h-[600px] shadow-2xl mx-auto flex flex-col items-center justify-center text-center font-serif">
-                <div className="absolute top-10 flex flex-col items-center">
-                    <Award size={80} className="text-primary-600 mb-2" />
-                    <div className="h-1 w-40 bg-primary-600"></div>
-                </div>
+        <div className="space-y-10">
+            <div id="certificate-template" className="bg-[#020617] text-white p-20 rounded-sm border-[12px] border-[#fbbf24]/30 relative w-[1000px] h-[700px] shadow-3xl mx-auto flex flex-col items-center justify-center text-center overflow-hidden">
+                {/* Background Decor */}
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fbbf24 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                <div className="absolute -top-20 -right-20 w-80 h-80 bg-primary-600/10 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-yellow-600/10 rounded-full blur-3xl"></div>
 
-                <h1 className="text-5xl font-black uppercase tracking-tighter mb-4 text-primary-900">Certificate</h1>
-                <p className="text-xl italic mb-8">Of Achievement</p>
-                
-                <p className="text-lg text-slate-500 mb-2 uppercase tracking-widest letter-spacing-1">THIS IS PROUDLY PRESENTED TO</p>
-                <h2 className="text-4xl font-bold mb-8 border-b-2 border-slate-300 pb-2 min-w-[300px]">{userName}</h2>
-                
-                <p className="max-w-md mx-auto text-lg leading-relaxed text-slate-700">
-                    For successfully completing the assessment <strong>{quizTitle}</strong> 
-                    with a score of <strong>{score}%</strong>, exceeding the passing threshold of {passPercentage}%.
-                </p>
+                <div className="relative z-10 border-2 border-[#fbbf24]/20 p-12 w-full h-full flex flex-col items-center justify-center">
+                    <div className="mb-6">
+                        <Award size={90} className="text-[#fbbf24] mb-2" />
+                        <div className="h-0.5 w-48 bg-gradient-to-r from-transparent via-[#fbbf24] to-transparent"></div>
+                    </div>
 
-                <div className="absolute bottom-16 w-full px-20 flex justify-between items-end">
-                    <div className="text-left border-t border-slate-400 pt-2 px-4">
-                        <p className="text-xs text-slate-500">Date Issued</p>
-                        <p className="font-bold">{new Date(date).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${window.location.href}`} className="opacity-40 grayscale" alt="Verify" />
-                         <p className="text-[8px] mt-1 text-slate-400 uppercase tracking-widest">Verification Link</p>
-                    </div>
-                    <div className="text-right border-t border-slate-400 pt-2 px-4">
-                        <p className="text-xs text-slate-500">Authority Signature</p>
-                        <p className="font-bold italic">NexQuiz Official</p>
+                    <h1 className="text-6xl font-black uppercase tracking-[0.2em] mb-4 text-transparent bg-clip-text bg-gradient-to-b from-[#fbbf24] to-[#d97706]">Official Credential</h1>
+                    <p className="text-xl text-slate-400 uppercase tracking-[0.4em] font-light mb-12">Achievement Excellence Award</p>
+                    
+                    <p className="text-sm font-bold text-slate-500 mb-2 uppercase tracking-[0.3em]">PROUDLY CONFERRED UPON</p>
+                    <h2 className="text-5xl font-serif font-black mb-10 text-white italic border-b border-white/10 pb-4 min-w-[500px]">{userName}</h2>
+                    
+                    <p className="max-w-2xl mx-auto text-lg leading-relaxed text-slate-300 font-light">
+                        For demonstrating exceptional mastery in <b>{quizTitle}</b>. 
+                        Achieving a distinguished final score of <span className="text-[#fbbf24] font-bold">{score}%</span>, 
+                        securing official certification based on the NexQuiz global standards.
+                    </p>
+
+                    <div className="absolute bottom-12 w-full px-16 flex justify-between items-end">
+                        <div className="text-left">
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-1">Date of Issue</p>
+                            <p className="font-bold text-white tracking-widest">{new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                        
+                        <div className="flex flex-col items-center bg-white p-2 rounded-lg shadow-xl translate-y-4">
+                             <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${verifyUrl}`} className="w-16 h-16" alt="Verify" />
+                             <p className="text-[6px] mt-1 text-slate-900 font-black uppercase tracking-tighter">Scan to Verify</p>
+                        </div>
+
+                        <div className="text-right">
+                             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-1">Authority Signature</p>
+                             <p className="text-2xl font-serif text-[#fbbf24] italic tracking-tighter">NexQuiz Board</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex justify-center gap-4 no-print mt-10">
-                <button onClick={handleDownload} className="btn-primary py-3 px-8 flex items-center gap-2">
-                    <Download size={20} /> Download Certificate (PNG)
+            <div className="flex justify-center gap-6 no-print">
+                <button onClick={handleDownload} className="btn-primary py-5 px-10 flex items-center gap-3 shadow-2xl shadow-primary-500/20 active:scale-95 transition-all">
+                    <Download size={22} /> <span className="font-black uppercase tracking-widest text-xs">Secure PNG Download</span>
                 </button>
-                <button onClick={() => window.print()} className="bg-white/10 hover:bg-white/20 px-8 py-3 rounded-xl flex items-center gap-2">
-                    Print PDF
+                <button onClick={() => window.print()} className="bg-white/5 hover:bg-white/10 px-10 py-5 rounded-2xl flex items-center gap-3 transition-all">
+                    <Share2 size={20} className="text-slate-400" /> <span className="font-black uppercase tracking-widest text-xs text-slate-400">Public Share</span>
                 </button>
             </div>
         </div>

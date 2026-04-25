@@ -42,9 +42,22 @@ export default function Result() {
     };
 
     if (!result) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest animate-pulse font-mono">Calculating Performance...</p>
+        <div className="max-w-4xl mx-auto p-6 space-y-8 animate-pulse">
+            <div className="h-64 bg-white/5 rounded-[32px] border border-white/10 flex items-center justify-center">
+                <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-white/5 rounded-2xl border border-white/10"></div>)}
+            </div>
+            <div className="h-20 bg-white/5 rounded-base"></div>
+        </div>
+    );
+
+    if (result.error) return (
+        <div className="text-center py-20">
+            <h1 className="text-4xl font-black mb-4">Result Not Found</h1>
+            <p className="text-slate-400 mb-8">This session might be incomplete or the record was moved.</p>
+            <Link to="/dashboard" className="btn-primary px-8 py-4">Back to Dashboard</Link>
         </div>
     );
 
@@ -112,17 +125,18 @@ export default function Result() {
                 </div>
             </motion.div>
 
-            {showCertificate && isPass && (
-                <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="py-10">
-                    <Certificate
-                        userName={result.userName || "Student"}
-                        quizTitle={attempt.title}
-                        score={accuracy}
-                        date={attempt.submitted_at}
-                        passPercentage={attempt.pass_percentage || 50}
-                    />
-                </motion.div>
-            )}
+                {showCertificate && isPass && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12 pt-12 border-t border-white/5">
+                        <Certificate 
+                            userName={attempt.student_name || user.name} 
+                            quizTitle={attempt.title} 
+                            score={accuracy} 
+                            date={attempt.submitted_at}
+                            passPercentage={attempt.pass_percentage}
+                            attemptId={id}
+                        />
+                    </motion.div>
+                )}
 
             {expandedReview && (
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="space-y-6">

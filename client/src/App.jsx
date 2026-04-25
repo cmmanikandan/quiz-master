@@ -11,6 +11,7 @@ import Leaderboard from './pages/Leaderboard';
 import AdminPanel from './pages/AdminPanel';
 import StaffReport from './pages/StaffReport';
 import Profile from './pages/Profile';
+import VerifyCertificate from './pages/VerifyCertificate';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute = ({ children, roles }) => {
@@ -59,6 +60,7 @@ function App() {
               <Route path="/staff/report/:id" element={
                 <ProtectedRoute roles={['staff', 'admin']}><StaffReport /></ProtectedRoute>
               } />
+              <Route path="/verify/:id" element={<VerifyCertificate />} />
             </Routes>
           </main>
         </div>

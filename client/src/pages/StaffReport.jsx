@@ -23,6 +23,7 @@ export default function StaffReport() {
 
     useEffect(() => {
         fetchData();
+        fetchAnalytics();
         socket.emit('join_proctor', id);
         socket.on('user_status_update', (data) => {
             setLiveUsers(prev => ({ ...prev, [data.userId]: data }));
@@ -31,6 +32,13 @@ export default function StaffReport() {
             socket.off('user_status_update');
         };
     }, [id]);
+
+    const fetchAnalytics = async () => {
+        try {
+            const res = await api.get(`/quiz/${id}/analytics`);
+            setAnalytics(res.data);
+        } catch (err) { }
+    };
 
     const handleStartQuiz = async () => {
         try {
@@ -59,12 +67,8 @@ export default function StaffReport() {
             if (Array.isArray(attemptsRes.data)) {
                 setAttempts(attemptsRes.data);
                 calculateStats(attemptsRes.data, quizRes.data.quiz);
-            } else {
-                setAttempts([]);
             }
-        } catch (err) {
-            console.error(err);
-        }
+        } catch (err) { }
     };
 
     const calculateStats = (data, q) => {
@@ -174,6 +178,67 @@ export default function StaffReport() {
                         </div>
                     </div>
                 </div>
+
+                {/* Advanced Analytics Heatmap */}
+                {analytics && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div className="glass p-8 rounded-[32px] border-white/5">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3 bg-primary-500/10 text-primary-500 rounded-2xl">
+                                    <PieChart size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Question Performance</h3>
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Identifying problematic questions</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                {analytics.questionStats.map((stat, idx) => (
+                                    <div key={stat.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Question {idx + 1}</span>
+                                            <span className={`text-xs font-black px-3 py-1 rounded-full ${
+                                                stat.accuracy < 40 ? 'bg-red-500/20 text-red-500' : 
+                                                stat.accuracy < 70 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-green-500/20 text-green-500'
+                                            }`}>
+                                                {stat.accuracy}% Accuracy
+                                            </span>
+                                        </div>
+                                        <p className="text-slate-300 text-sm line-clamp-2 group-hover:line-clamp-none transition-all">{stat.question}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="glass p-8 rounded-[32px] border-white/5 flex flex-col justify-between">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3 bg-purple-500/10 text-purple-500 rounded-2xl">
+                                    <TrendingUp size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Score Distribution</h3>
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Class Grade Curve</p>
+                                </div>
+                            </div>
+                            <div className="flex items-end justify-between gap-2 h-48 px-4">
+                                {[...Array(11)].map((_, i) => {
+                                    const bin = i * 10;
+                                    const data = analytics.scoreDistribution.find(d => d.score_bin === bin);
+                                    const height = data ? `${Math.min(100, (data.count / stats.totalAttempts) * 100)}%` : '5%';
+                                    return (
+                                        <div key={bin} className="flex-1 flex flex-col items-center gap-2 group relative">
+                                            <div className="absolute -top-8 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                                                {data?.count || 0} students
+                                            </div>
+                                            <div className="w-full bg-primary-500/20 rounded-t-lg transition-all group-hover:bg-primary-500/40" style={{ height }}></div>
+                                            <span className="text-[8px] text-slate-600 font-bold">{bin}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* History Table */}
                 <div className="lg:col-span-8 space-y-6">

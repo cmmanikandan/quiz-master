@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import {
     Plus, Upload, FileText, BarChart3, Trash2, CheckCircle, Zap, Trophy, MessageSquare,
-    Smartphone, Mail, Send, Settings, ChevronLeft, Search, X, Shield, Globe
+    Smartphone, Mail, Send, Settings, ChevronLeft, Search, X, Shield, Globe, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AIQuizGenerator from '../components/AIQuizGenerator';
 
 export default function StaffBoard() {
     const [quizzes, setQuizzes] = useState([]);
@@ -360,13 +361,14 @@ export default function StaffBoard() {
                                             {uploadMode === 'manual' ? <Plus size={18} /> : uploadMode === 'settings' ? <Settings size={17} /> : uploadMode === 'invite' ? <MessageSquare size={17} /> : <FileText size={17} />}
                                         </div>
                                         <h2 className="text-base font-bold uppercase tracking-tight text-white">
-                                            {uploadMode === 'manual' ? 'Add Question' : uploadMode === 'settings' ? 'Settings' : uploadMode === 'invite' ? 'Broadcast' : 'Import CSV'}
+                                            {uploadMode === 'manual' ? 'Add Question' : uploadMode === 'settings' ? 'Settings' : uploadMode === 'invite' ? 'Broadcast' : uploadMode === 'ai' ? 'AI Architect' : 'Import CSV'}
                                         </h2>
                                     </div>
                                     {/* Scrollable tab bar */}
                                     <div className="flex bg-slate-900 p-1 rounded-xl border border-white/5 overflow-x-auto w-full sm:w-auto gap-0.5">
                                         {[
                                             { id: 'csv', label: 'CSV', icon: <Upload size={12} /> },
+                                            { id: 'ai', label: 'AI', icon: <Sparkles size={12} /> },
                                             { id: 'manual', label: 'Manual', icon: <Plus size={12} /> },
                                             { id: 'settings', label: 'Settings', icon: <Settings size={12} /> },
                                             { id: 'invite', label: 'Invite', icon: <MessageSquare size={12} /> },
@@ -384,7 +386,11 @@ export default function StaffBoard() {
                                 </div>
 
                                 <AnimatePresence mode="wait">
-                                    {uploadMode === 'settings' ? (
+                                    {uploadMode === 'ai' ? (
+                                        <motion.div key="ai" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                            <AIQuizGenerator quizId={selectedQuiz} onQuestionsAdded={fetchQuizQuestions} />
+                                        </motion.div>
+                                    ) : uploadMode === 'settings' ? (
                                         <motion.form key="settings" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} onSubmit={async (e) => {
                                             e.preventDefault();
                                             try { await api.put(`/quiz/${selectedQuiz}`, editingQuiz); alert('Configuration Synchronized'); fetchQuizzes(); } catch (err) { alert('Sync Failed'); }

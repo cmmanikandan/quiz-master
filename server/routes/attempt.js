@@ -57,13 +57,31 @@ router.post('/save-progress/:code', auth, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-// Submit Quiz
+const { calculateScore } = require('../utils/scoring');
+
+// Submit Quiz Session (Final Submission)
 router.post('/submit', auth, async (req, res) => {
     const { quiz_id, answers, time_taken, tab_switches, started_at, finished_at, student_details } = req.body;
-    let score = 0;
 
     try {
-        // Find existing non-completed attempt
+        // 1. Idempotency Check: Prevent duplicate submissions
+        const [alreadySubmitted] = await pool.execute(
+            "SELECT id, score, student_name FROM attempts WHERE user_id = ? AND quiz_id = ? AND status = 'completed' LIMIT 1",
+            [req.user.id, quiz_id]
+        );
+
+        if (alreadySubmitted.length > 0) {
+            return res.json({
+                success: true,
+                message: "Quiz already submitted",
+                attemptId: alreadySubmitted[0].id,
+                score: alreadySubmitted[0].score,
+                user_name: alreadySubmitted[0].student_name || req.user.name,
+                isDuplicate: true
+            });
+        }
+
+        // 2. Fetch existing attempt or find the one to update
         const [existing] = await pool.execute(
             "SELECT id FROM attempts WHERE user_id = ? AND quiz_id = ? AND status != 'completed' LIMIT 1",
             [req.user.id, quiz_id]
@@ -74,76 +92,39 @@ router.post('/submit', auth, async (req, res) => {
             attemptId = existing[0].id;
             await pool.execute(
                 "UPDATE attempts SET time_taken = ?, tab_switches = ?, status = 'completed', submitted_at = ?, student_name = ?, reg_no = ?, dept = ?, year = ? WHERE id = ?",
-                [
-                    time_taken,
-                    tab_switches || 0,
-                    finished_at || new Date(),
-                    student_details?.name || null,
-                    student_details?.regNo || null,
-                    student_details?.dept || null,
-                    student_details?.year || null,
-                    attemptId
-                ]
+                [time_taken, tab_switches || 0, finished_at || new Date(), student_details?.name || null, student_details?.regNo || null, student_details?.dept || null, student_details?.year || null, attemptId]
             );
-            // Clear previous answers to avoid duplicates if re-submitting (though unlikely in current flow)
-            await pool.execute('DELETE FROM answers WHERE attempt_id = ?', [attemptId]);
         } else {
             const [attemptResult] = await pool.execute(
                 "INSERT INTO attempts (user_id, quiz_id, time_taken, tab_switches, status, started_at, submitted_at, student_name, reg_no, dept, year) VALUES (?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?, ?)",
-                [
-                    req.user.id,
-                    quiz_id,
-                    time_taken,
-                    tab_switches || 0,
-                    started_at || new Date(),
-                    finished_at || new Date(),
-                    student_details?.name || null,
-                    student_details?.regNo || null,
-                    student_details?.dept || null,
-                    student_details?.year || null
-                ]
+                [req.user.id, quiz_id, time_taken, tab_switches || 0, started_at || new Date(), finished_at || new Date(), student_details?.name || null, student_details?.regNo || null, student_details?.dept || null, student_details?.year || null]
             );
             attemptId = attemptResult.insertId;
         }
 
-        // Fetch questions
+        // 3. Robust Scoring Calculation
         const [questions] = await pool.execute('SELECT id, correct_option, points, type FROM questions WHERE quiz_id = ?', [quiz_id]);
         const [quizzes] = await pool.execute('SELECT negative_marking FROM quizzes WHERE id = ?', [quiz_id]);
         const negMarking = quizzes[0]?.negative_marking || 0;
 
-        for (let q of questions) {
-            const userAnswer = answers.find(a => a.question_id === q.id);
-            let isCorrect = false;
+        const { score, reviewedAnswers } = calculateScore(questions, answers, negMarking);
 
-            if (userAnswer && userAnswer.selected_option && q.correct_option) {
-                const uAns = userAnswer.selected_option.toString().trim();
-                const cAns = q.correct_option.toString().trim();
-
-                if (q.type === 'mcq' || q.type === 'tf' || q.type === 'short' || q.type === 'blank') {
-                    isCorrect = uAns.toLowerCase() === cAns.toLowerCase();
-                } else if (q.type === 'matching') {
-                    isCorrect = uAns === cAns;
-                }
-
-                if (isCorrect) {
-                    score += (q.points || 1);
-                } else {
-                    score -= parseFloat(negMarking || 0);
-                }
-            }
-
+        // 4. Batch Answer Insertion
+        // We delete any "ongoing" progress answers to ensure a clean state for final result
+        await pool.execute('DELETE FROM answers WHERE attempt_id = ?', [attemptId]);
+        
+        for (const ansData of reviewedAnswers) {
             try {
                 await pool.execute(
                     'INSERT INTO answers (attempt_id, question_id, selected_option, is_correct) VALUES (?, ?, ?, ?)',
-                    [attemptId, q.id, userAnswer ? (userAnswer.selected_option || null) : null, isCorrect ? 1 : 0]
+                    [attemptId, ansData.question_id, ansData.selected_option, ansData.is_correct ? 1 : 0]
                 );
-            } catch (ansErr) {
-                console.error(`Answer insert failed for question ${q.id}:`, ansErr.message);
-                // Continue grading other questions even if one fails
+            } catch (err) {
+                console.error(`Ans Insert Failed for Q:${ansData.question_id}`, err.message);
             }
         }
 
-        // Update final score
+        // 5. Update final score
         await pool.execute('UPDATE attempts SET score = ? WHERE id = ?', [score, attemptId]);
 
         res.json({
@@ -153,16 +134,36 @@ router.post('/submit', auth, async (req, res) => {
             score,
             user_name: req.user.name
         });
+
     } catch (err) {
         console.error("Submit Error:", err);
         res.status(500).json({
             success: false,
-            message: "Submission failed, please retry",
+            message: "Critical submission error, progress saved locally",
             error: err.message
         });
     }
 });
 
+// Public Verification Route (No Auth Required)
+router.get('/verify/:id', async (req, res) => {
+    try {
+        const [results] = await pool.execute(`
+            SELECT a.id, a.user_id, a.score, a.submitted_at, a.student_name, u.name as user_name, q.title as quiz_title,
+                   (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as total_questions
+            FROM attempts a
+            JOIN users u ON a.user_id = u.id
+            JOIN quizzes q ON a.quiz_id = q.id
+            WHERE a.id = ? AND a.status = 'completed'`,
+            [req.params.id]
+        );
+
+        if (results.length === 0) return res.status(404).json({ message: "Invalid Certificate" });
+        res.json(results[0]);
+    } catch (err) {
+        res.status(500).json({ message: "Verification failed" });
+    }
+});
 // Get Attempt Details (Result Page)
 router.get('/result/:id', auth, async (req, res) => {
     try {
