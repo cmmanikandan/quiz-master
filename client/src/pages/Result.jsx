@@ -38,8 +38,8 @@ export default function Result() {
     const isPass = accuracy >= (attempt.pass_percentage || 50);
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-12 rounded-3xl text-center relative overflow-hidden">
+        <div className="max-w-4xl mx-auto space-y-8 px-2 md:px-0 pb-10">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass p-6 md:p-12 rounded-[32px] text-center relative overflow-hidden">
                 {isPass && (
                     <div className="absolute top-4 left-4 flex flex-col items-center gap-1">
                         <Trophy className="text-yellow-400" size={32} />
@@ -47,10 +47,10 @@ export default function Result() {
                     </div>
                 )}
                 <div className="inline-block p-4 bg-yellow-500/20 text-yellow-500 rounded-full mb-6">
-                    <Trophy size={64} />
+                    <Trophy size={48} className="md:w-16 md:h-16" />
                 </div>
-                <h1 className="text-5xl font-bold mb-2">Quiz Completed!</h1>
-                <p className="text-xl text-slate-400 mb-8">{attempt.title}</p>
+                <h1 className="text-3xl md:text-5xl font-black mb-2 tracking-tighter uppercase">Quiz Completed!</h1>
+                <p className="text-base md:text-xl text-slate-400 mb-8 font-medium italic">"{attempt.title}"</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard icon={<CheckCircle className="text-green-400" />} label="Final Score" value={`${attempt.score.toFixed(1)} / ${answers.length}`} />
@@ -77,25 +77,25 @@ export default function Result() {
                 </div>
 
                 <div className="mt-12 flex flex-col md:flex-row gap-4 justify-center">
-                    <Link to="/dashboard" className="btn-primary py-3 px-8 text-base">Back to Dashboard</Link>
+                    <Link to="/dashboard" className="btn-primary py-4 px-8 text-sm md:text-base font-black">Back to Dashboard</Link>
                     {isPass && (
-                        <button onClick={() => setShowCertificate(!showCertificate)} className="bg-yellow-500 hover:bg-yellow-600 text-slate-950 py-3 px-8 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                            <Trophy size={20} /> {showCertificate ? 'Hide Certificate' : 'Claim Certificate'}
+                        <button onClick={() => setShowCertificate(!showCertificate)} className="bg-yellow-500 hover:bg-yellow-600 text-slate-950 py-4 px-8 rounded-xl font-black flex items-center justify-center gap-2 transition-all text-sm md:text-base">
+                            <Trophy size={18} /> {showCertificate ? 'CERTIFICATE ON' : 'CLAIM CERTIFICATE'}
                         </button>
                     )}
-                    <button onClick={() => setExpandedReview(!expandedReview)} className="bg-white/10 hover:bg-white/20 py-3 px-8 rounded-xl flex items-center justify-center gap-2 text-base">
-                        {expandedReview ? 'Hide Review' : 'Review Answers'} <ChevronDown className={`transition-transform ${expandedReview ? 'rotate-180' : ''}`} />
+                    <button onClick={() => setExpandedReview(!expandedReview)} className="bg-white/10 hover:bg-white/20 py-4 px-8 rounded-xl flex items-center justify-center gap-2 text-sm md:text-base font-black">
+                        {expandedReview ? 'HIDE REVIEW' : 'REVIEW SESSION'} <ChevronDown size={18} className={`transition-transform ${expandedReview ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
             </motion.div>
 
             {showCertificate && isPass && (
                 <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="py-10">
-                    <Certificate 
-                        userName={result.userName || "Student"} 
-                        quizTitle={attempt.title} 
-                        score={accuracy} 
-                        date={attempt.submitted_at} 
+                    <Certificate
+                        userName={result.userName || "Student"}
+                        quizTitle={attempt.title}
+                        score={accuracy}
+                        date={attempt.submitted_at}
                         passPercentage={attempt.pass_percentage || 50}
                     />
                 </motion.div>
@@ -103,12 +103,12 @@ export default function Result() {
 
             {expandedReview && (
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="space-y-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold">Detailed Review</h2>
-                        <div className="flex bg-white/5 p-1 rounded-lg">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter">Detailed Review</h2>
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
                             {['all', 'correct', 'wrong'].map(f => (
-                                <button key={f} onClick={() => setFilter(f)} className={`px-4 py-1 rounded-md capitalize transition-all ${filter === f ? 'bg-primary-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                                    {f}
+                                <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-lg capitalize transition-all text-[10px] font-black tracking-widest ${filter === f ? 'bg-primary-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>
+                                    {f.toUpperCase()}
                                 </button>
                             ))}
                         </div>
@@ -126,14 +126,17 @@ export default function Result() {
                                 {['a', 'b', 'c', 'd'].map(opt => {
                                     const isUserChoice = ans.selected_option === opt;
                                     const isCorrect = ans.correct_option === opt;
+                                    if (!ans[`option_${opt}`] && ans.type === 'tf' && (opt === 'c' || opt === 'd')) return null;
+
                                     return (
-                                        <div key={opt} className={`p-4 rounded-lg border flex items-center gap-3 ${isCorrect ? 'bg-green-500/20 border-green-500/50 text-green-300' :
-                                                isUserChoice ? 'bg-red-500/20 border-red-500/50 text-red-300' :
-                                                    'bg-white/5 border-white/5'
+                                        <div key={opt} className={`p-4 rounded-xl border flex items-center gap-3 text-sm md:text-base font-medium ${isCorrect ? 'bg-green-500/10 border-green-500/30 text-green-400' :
+                                            isUserChoice ? 'bg-red-500/10 border-red-500/30 text-red-400' :
+                                                'bg-white/5 border-white/5 text-slate-300'
                                             }`}>
-                                            <span className="font-bold uppercase">{opt}.</span> {ans[`option_${opt}`]}
-                                            {isCorrect && <CheckCircle size={16} className="ml-auto" />}
-                                            {isUserChoice && !isCorrect && <XCircle size={16} className="ml-auto" />}
+                                            <span className="font-black uppercase opacity-40">{opt}.</span>
+                                            {ans.type === 'tf' ? (opt === 'a' ? 'TRUE' : 'FALSE') : ans[`option_${opt}`]}
+                                            {isCorrect && <CheckCircle size={16} className="ml-auto flex-shrink-0" />}
+                                            {isUserChoice && !isCorrect && <XCircle size={16} className="ml-auto flex-shrink-0" />}
                                         </div>
                                     );
                                 })}

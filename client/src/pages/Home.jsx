@@ -91,15 +91,15 @@ export default function Home() {
                                 </button>
                             </>
                         ) : (
-                            <form onSubmit={handleJoin} className="flex bg-white/5 border border-white/10 p-1.5 rounded-xl focus-within:border-primary-500 transition-all max-w-md w-full">
+                            <form onSubmit={handleJoin} className="flex flex-col sm:flex-row bg-white/5 border border-white/10 p-1.5 rounded-2xl focus-within:border-primary-500 transition-all max-w-md w-full gap-2 sm:gap-0">
                                 <input
                                     type="text"
                                     placeholder="Enter Access Code..."
                                     value={joinCode}
                                     onChange={(e) => setJoinCode(e.target.value)}
-                                    className="bg-transparent border-none focus:ring-0 text-white font-bold px-4 flex-1 placeholder:text-slate-600"
+                                    className="bg-transparent border-none focus:ring-0 text-white font-bold px-4 py-3 flex-1 placeholder:text-slate-600 outline-none h-12"
                                 />
-                                <button type="submit" className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2.5 rounded-lg font-bold uppercase text-xs transition-all">
+                                <button type="submit" className="bg-primary-600 hover:bg-primary-500 text-white px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-xl h-12 whitespace-nowrap">
                                     Join Quiz
                                 </button>
                             </form>

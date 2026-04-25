@@ -13,7 +13,7 @@ export default function QuizPlayer() {
     const [quiz, setQuiz] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [currentIdx, setCurrentIdx] = useState(0);
-    const [answers, setAnswers] = useState([]); 
+    const [answers, setAnswers] = useState([]);
     const [timeLeft, setTimeLeft] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isFullScreen, setIsFullScreen] = useState(false);
@@ -24,6 +24,7 @@ export default function QuizPlayer() {
     const [hasSubmittedDetails, setHasSubmittedDetails] = useState(false);
     const [studentForm, setStudentForm] = useState({ name: '', regNo: '', dept: '', year: '' });
     const [attemptId, setAttemptId] = useState(null);
+    const [isFinishing, setIsFinishing] = useState(false);
 
     const timerRef = useRef(null);
 
@@ -41,7 +42,7 @@ export default function QuizPlayer() {
                     if (res.data.attempt.responses) {
                         try {
                             setAnswers(JSON.parse(res.data.attempt.responses));
-                        } catch(e) {}
+                        } catch (e) { }
                     }
                 }
             }
@@ -54,7 +55,7 @@ export default function QuizPlayer() {
         if (isBlocked) return;
         setIsBlocked(true);
         try {
-            await api.post(`/quiz/block-my-attempt/${code}`); 
+            await api.post(`/quiz/block-my-attempt/${code}`);
         } catch (err) {
             console.error("Block sync failed");
         }
@@ -70,19 +71,19 @@ export default function QuizPlayer() {
         socket.connect();
 
         const handleVisibilityChange = () => {
-            if (document.hidden && isLiveReady && !loading && !isBlocked) {
+            if (document.hidden && isLiveReady && !loading && !isBlocked && !isFinishing) {
                 handleBlockUser();
             }
         };
 
         const handleBlur = () => {
-            if (isLiveReady && !loading && !isBlocked) {
+            if (isLiveReady && !loading && !isBlocked && !isFinishing) {
                 handleBlockUser();
             }
         };
 
         const handleFullscreenChange = () => {
-            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked) {
+            if (!document.fullscreenElement && isLiveReady && !loading && !isBlocked && !isFinishing) {
                 handleBlockUser();
             }
         };
@@ -90,7 +91,7 @@ export default function QuizPlayer() {
         document.addEventListener("visibilitychange", handleVisibilityChange);
         document.addEventListener("fullscreenchange", handleFullscreenChange);
         window.addEventListener("blur", handleBlur);
-        
+
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -187,6 +188,8 @@ export default function QuizPlayer() {
             if (!window.confirm("CONFIRM SUBMISSION: Are you sure you want to finalize your assessment?")) return;
         }
 
+        setIsFinishing(true);
+
         try {
             const finishTime = new Date().toISOString();
             const duration = Math.floor((new Date(finishTime) - new Date(startTime)) / 1000);
@@ -208,9 +211,9 @@ export default function QuizPlayer() {
             });
 
             if (document.fullscreenElement) {
-                try { await document.exitFullscreen(); } catch(e) {}
+                try { await document.exitFullscreen(); } catch (e) { }
             }
-            
+
             navigate(`/result/${res.data.attempt_id || res.data.attemptId || attemptId}`);
         } catch (err) {
             console.error("Submission Error:", err);
@@ -233,12 +236,12 @@ export default function QuizPlayer() {
                 const end = new Date(quiz.scheduled_end);
                 setIsLiveReady(now >= start && now <= end);
             } else {
-                setIsLiveReady(true); 
+                setIsLiveReady(true);
             }
         };
 
         checkAccess();
-        const interval = setInterval(checkAccess, 10000); 
+        const interval = setInterval(checkAccess, 10000);
         return () => {
             socket.off('quiz_started');
             clearInterval(interval);
@@ -279,46 +282,46 @@ export default function QuizPlayer() {
     }
 
     if (!isLiveReady || !isFullScreen || (quiz?.require_details && !hasSubmittedDetails)) return (
-        <div className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-6 overflow-y-auto">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass p-12 rounded-[40px] max-w-2xl w-full text-center border-primary-500/30 border-2 my-10 shadow-3xl">
-                
+        <div className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4 md:p-6 overflow-y-auto">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass p-8 md:p-12 rounded-[30px] md:rounded-[40px] max-w-2xl w-full text-center border-primary-500/30 border-2 my-10 shadow-3xl">
+
                 {quiz?.require_details && !hasSubmittedDetails ? (
                     <div className="text-left space-y-6">
                         <div className="text-center mb-8">
-                             <div className="w-20 h-20 bg-primary-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <div className="w-20 h-20 bg-primary-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <Users size={40} className="text-primary-400" />
-                             </div>
-                             <h2 className="text-4xl font-black tracking-tighter uppercase text-white">Identity Check</h2>
-                             <p className="text-slate-500 text-sm font-medium mt-1">Official identification required for this proctored session.</p>
+                            </div>
+                            <h2 className="text-4xl font-black tracking-tighter uppercase text-white">Identity Check</h2>
+                            <p className="text-slate-500 text-sm font-medium mt-1">Official identification required for this proctored session.</p>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div className="space-y-2">
-                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Full Name</label>
-                                 <input type="text" className="input-field py-4" placeholder="e.g. John Doe" value={studentForm.name} onChange={e => setStudentForm({...studentForm, name: e.target.value})} />
-                             </div>
-                             <div className="space-y-2">
-                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Register Number</label>
-                                 <input type="text" className="input-field py-4 font-mono" placeholder="21BCS001" value={studentForm.regNo} onChange={e => setStudentForm({...studentForm, regNo: e.target.value})} />
-                             </div>
-                             <div className="space-y-2">
-                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Department</label>
-                                 <input type="text" className="input-field py-4" placeholder="CSE" value={studentForm.dept} onChange={e => setStudentForm({...studentForm, dept: e.target.value})} />
-                             </div>
-                             <div className="space-y-2">
-                                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Academic Year</label>
-                                 <select className="input-field py-4 bg-slate-800" value={studentForm.year} onChange={e => setStudentForm({...studentForm, year: e.target.value})}>
-                                     <option value="">Select Year</option>
-                                     <option value="I">I Year</option>
-                                     <option value="II">II Year</option>
-                                     <option value="III">III Year</option>
-                                     <option value="IV">IV Year</option>
-                                 </select>
-                             </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Full Name</label>
+                                <input type="text" className="input-field py-4" placeholder="e.g. John Doe" value={studentForm.name} onChange={e => setStudentForm({ ...studentForm, name: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Register Number</label>
+                                <input type="text" className="input-field py-4 font-mono" placeholder="21BCS001" value={studentForm.regNo} onChange={e => setStudentForm({ ...studentForm, regNo: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Department</label>
+                                <input type="text" className="input-field py-4" placeholder="CSE" value={studentForm.dept} onChange={e => setStudentForm({ ...studentForm, dept: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Academic Year</label>
+                                <select className="input-field py-4 bg-slate-800" value={studentForm.year} onChange={e => setStudentForm({ ...studentForm, year: e.target.value })}>
+                                    <option value="">Select Year</option>
+                                    <option value="I">I Year</option>
+                                    <option value="II">II Year</option>
+                                    <option value="III">III Year</option>
+                                    <option value="IV">IV Year</option>
+                                </select>
+                            </div>
                         </div>
-                        <button 
+                        <button
                             disabled={!studentForm.name || !studentForm.regNo || !studentForm.dept || !studentForm.year}
-                            onClick={() => setHasSubmittedDetails(true)} 
+                            onClick={() => setHasSubmittedDetails(true)}
                             className="bg-primary-600 hover:bg-primary-500 w-full py-5 text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary-500/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-2xl transition-all"
                         >
                             VERIFY & ENTER LOBBY
@@ -331,24 +334,24 @@ export default function QuizPlayer() {
                                 {quiz?.quiz_type === 'live' ? <Users size={64} className="text-primary-400 animate-pulse" /> : <Zap size={64} className="text-primary-400" />}
                             </div>
                         </div>
-                        
+
                         <h1 className="text-5xl font-black mb-4 uppercase tracking-tighter text-white">
                             {quiz?.quiz_type === 'live' ? 'Synchronizing...' : 'Secure Assessment'}
                         </h1>
-                        
+
                         <p className="text-slate-400 text-lg mb-12 font-medium leading-relaxed">
-                            {quiz?.quiz_type === 'live' ? 'Awaiting start signal from proctor. Do not close this window.' : 
-                             quiz?.quiz_type === 'scheduled' ? `Assessment Window: ${new Date(quiz.scheduled_start).toLocaleString()}` : 
-                             'Your secure environment is ready. Click below to begin.'}
+                            {quiz?.quiz_type === 'live' ? 'Awaiting start signal from proctor. Do not close this window.' :
+                                quiz?.quiz_type === 'scheduled' ? `Assessment Window: ${new Date(quiz.scheduled_start).toLocaleString()}` :
+                                    'Your secure environment is ready. Click below to begin.'}
                         </p>
-                        
+
                         <div className="flex flex-col items-center justify-center gap-6 mt-8">
                             {isLiveReady ? (
-                                <motion.button 
+                                <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => {
-                                        document.documentElement.requestFullscreen().catch(() => {});
+                                        document.documentElement.requestFullscreen().catch(() => { });
                                         setIsFullScreen(true);
                                     }}
                                     className="bg-primary-600 hover:bg-primary-500 text-white px-16 py-6 rounded-[24px] text-xl font-black uppercase tracking-widest flex items-center gap-4 shadow-3xl"
@@ -357,7 +360,7 @@ export default function QuizPlayer() {
                                 </motion.button>
                             ) : (
                                 <div className="space-y-4">
-                                     <div className="flex items-center gap-3 text-yellow-500 font-black text-xs uppercase tracking-[0.2em] bg-yellow-500/10 px-6 py-2 rounded-full border border-yellow-500/20">
+                                    <div className="flex items-center gap-3 text-yellow-500 font-black text-xs uppercase tracking-[0.2em] bg-yellow-500/10 px-6 py-2 rounded-full border border-yellow-500/20">
                                         <div className="w-2 h-2 bg-yellow-500 rounded-full animate-ping"></div>
                                         {quiz?.quiz_type === 'live' ? 'Awaiting Staff Authorization' : 'Assessment Window Not Open'}
                                     </div>
@@ -393,7 +396,7 @@ export default function QuizPlayer() {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-white uppercase tracking-tighter truncate max-w-md">{quiz.title}</h1>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Module Progress • {Math.round(((currentIdx + 1)/questions.length)*100)}%</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Module Progress • {Math.round(((currentIdx + 1) / questions.length) * 100)}%</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-10">
@@ -415,15 +418,15 @@ export default function QuizPlayer() {
                 <AnimatePresence mode="wait">
                     <motion.div key={currentIdx} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} className="glass p-10 rounded-[48px] min-h-[500px] flex flex-col justify-between border-white/5 bg-white/[0.01]">
                         <div className="space-y-10">
-                            <div className="flex justify-between items-start">
-                                <h2 className="text-3xl font-black text-white leading-tight max-w-3xl">{currentQ.question}</h2>
-                                <span className="bg-primary-500/10 text-primary-400 px-5 py-2 rounded-2xl text-xs font-black tracking-widest border border-primary-500/20 uppercase whitespace-nowrap">
+                            <div className="flex flex-col-reverse md:flex-row justify-between items-start gap-4">
+                                <h2 className="text-xl md:text-3xl font-black text-white leading-tight max-w-3xl">{currentQ.question}</h2>
+                                <span className="bg-primary-500/10 text-primary-400 px-4 py-1.5 md:px-5 md:py-2 rounded-2xl text-[10px] md:text-xs font-black tracking-widest border border-primary-500/20 uppercase whitespace-nowrap">
                                     {currentQ.points} Units
                                 </span>
                             </div>
 
                             {currentQ.image_url && (
-                                <div className="rounded-[32px] overflow-hidden border border-white/10 max-h-80 flex justify-center bg-black/40 p-4 shadow-inner">
+                                <div className="rounded-[24px] md:rounded-[32px] overflow-hidden border border-white/10 max-h-60 md:max-h-80 flex justify-center bg-black/40 p-3 md:p-4 shadow-inner">
                                     <img src={currentQ.image_url} alt="Reference media" className="object-contain h-full rounded-2xl" />
                                 </div>
                             )}
@@ -434,15 +437,15 @@ export default function QuizPlayer() {
                                     <button
                                         key={opt}
                                         onClick={() => handleSelect(opt)}
-                                        className={`group p-8 text-left rounded-[28px] border-2 transition-all flex items-center gap-6 ${userAns === opt
+                                        className={`group p-5 md:p-8 text-left rounded-[20px] md:rounded-[28px] border-2 transition-all flex items-center gap-4 md:gap-6 ${userAns === opt
                                             ? 'border-primary-500 bg-primary-500/10 shadow-[0_0_40px_rgba(59,130,246,0.1)]'
                                             : 'border-white/5 hover:border-white/20 hover:bg-white/[0.03]'
                                             }`}
                                     >
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl transition-all ${userAns === opt ? 'bg-primary-600 text-white' : 'bg-white/5 text-slate-500 group-hover:bg-white/10'}`}>
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center font-black text-lg md:text-xl transition-all ${userAns === opt ? 'bg-primary-600 text-white' : 'bg-white/5 text-slate-500 group-hover:bg-white/10'}`}>
                                             {opt.toUpperCase()}
                                         </div>
-                                        <span className={`text-lg font-bold transition-all ${userAns === opt ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                                        <span className={`text-sm md:text-lg font-bold transition-all ${userAns === opt ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
                                             {currentQ.type === 'tf' ? (opt === 'a' ? 'TRUE' : 'FALSE') : currentQ[`option_${opt}`]}
                                         </span>
                                     </button>

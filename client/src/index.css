@@ -23,6 +23,8 @@
 
 @utility glass {
   @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 @utility btn-primary {
