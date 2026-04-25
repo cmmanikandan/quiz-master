@@ -1,6 +1,6 @@
-# 🚀 Pro Deployment Guide: QuizMaster
-
-This guide outlines the **best free-tier stack** for deploying the QuizMaster platform in 2026.
+# 🚀 Pro Deployment Guide: NexQuiz
+    
+This guide outlines the **best free-tier stack** for deploying the NexQuiz platform in 2026.
 
 ## 🏗️ The Recommended Stack
 | Component | Platform | Why? |
