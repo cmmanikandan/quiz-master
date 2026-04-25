@@ -73,7 +73,7 @@ export default function Register() {
                     <UserPlus size={40} />
                 </div>
                 <h2 className="text-2xl font-bold mb-1 text-center text-white">Create Account</h2>
-                <p className="text-slate-500 text-xs text-center mb-6">Join QuizMaster to start taking or creating quizzes</p>
+                <p className="text-slate-500 text-xs text-center mb-6">Join NexQuiz to start taking or creating quizzes</p>
 
                 {error && (
                     <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-4 text-sm text-center">

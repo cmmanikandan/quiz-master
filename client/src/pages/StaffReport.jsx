@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { 
-    Users, Trophy, Clock, AlertTriangle, FileText, 
+import {
+    Users, Trophy, Clock, AlertTriangle, FileText,
     Download, PieChart, TrendingUp, CheckCircle, XCircle, Search, Zap, ChevronLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import io from 'socket.io-client';
-
-const socket = io('http://localhost:5000');
+import socket from '../utils/socket';
 
 export default function StaffReport() {
     const { id } = useParams();
@@ -67,14 +65,14 @@ export default function StaffReport() {
 
     const calculateStats = (data, q) => {
         if (data.length === 0) {
-             setStats({ avgScore: 0, passRate: 0, totalAttempts: 0, avgTime: 0 });
-             return;
+            setStats({ avgScore: 0, passRate: 0, totalAttempts: 0, avgTime: 0 });
+            return;
         }
         const total = data.length;
         const sum = data.reduce((a, b) => a + parseFloat(b.score), 0);
         const avg = sum / total;
         const passCount = data.filter(a => (a.score / (q.total_questions || 10) * 100) >= (q.pass_percentage || 50)).length;
-        
+
         setStats({
             avgScore: avg.toFixed(1),
             passRate: Math.round((passCount / total) * 100),
@@ -95,7 +93,7 @@ export default function StaffReport() {
 
     if (!quiz) return <div className="p-20 text-center font-bold text-slate-500">Loading Proctor Hub...</div>;
 
-    const filteredAttempts = attempts.filter(a => 
+    const filteredAttempts = attempts.filter(a =>
         a.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -111,7 +109,7 @@ export default function StaffReport() {
                         </span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-500 font-bold text-[10px] uppercase tracking-widest">
-                         <Shield size={12} /> Proctoring Session Active
+                        <Shield size={12} /> Proctoring Session Active
                     </div>
                 </div>
 
@@ -161,7 +159,7 @@ export default function StaffReport() {
                                             </span>
                                         </div>
                                         <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                                 className="h-full bg-primary-600 transition-all duration-300"
                                                 style={{ width: `${(u.progress / (quiz.total_questions || 10)) * 100}%` }}
                                             />
@@ -182,9 +180,9 @@ export default function StaffReport() {
                             </h2>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-                                <input 
-                                    type="text" 
-                                    placeholder="Find student..." 
+                                <input
+                                    type="text"
+                                    placeholder="Find student..."
                                     className="bg-black/20 border border-white/5 rounded-lg pl-9 pr-4 py-2 text-xs w-full md:w-64 focus:outline-none focus:border-primary-500 transition-all"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
@@ -229,7 +227,7 @@ export default function StaffReport() {
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     {a.status === 'blocked' && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleUnblock(a.id)}
                                                             className="text-primary-500 hover:text-white hover:bg-primary-600 px-3 py-1 rounded-md text-[10px] font-bold border border-primary-500/30 transition-all uppercase"
                                                         >
@@ -272,5 +270,5 @@ function StatCard({ icon, label, value, color }) {
 }
 
 function Shield(props) {
-    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>;
+    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>;
 }

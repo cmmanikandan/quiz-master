@@ -272,7 +272,7 @@ export default function Profile() {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-mono text-[10px] text-slate-400 uppercase font-black mb-2">Issuing Authority</p>
-                                            <p className="font-black border-t-2 border-slate-900/10 pt-2 text-slate-900">QuizMaster Pro Platform</p>
+                                            <p className="font-black border-t-2 border-slate-900/10 pt-2 text-slate-900">NexQuiz Pro Platform</p>
                                         </div>
                                     </div>
                                 </div>

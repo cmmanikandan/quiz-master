@@ -174,7 +174,7 @@ export default function AdminPanel() {
                                                  <div className="flex justify-end gap-2">
                                                      <button 
                                                          onClick={() => handleDeleteUser(u.id)}
-                                                         disabled={u.email === 'admin@quizmaster.com'}
+                                                         disabled={u.email === 'admin@NexQuiz.com'}
                                                          className="p-2.5 rounded-xl bg-white/5 text-red-400 hover:bg-red-500/20 transition-all disabled:opacity-0"
                                                      >
                                                          <Trash2 size={16} />

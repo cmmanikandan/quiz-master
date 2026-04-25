@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { 
+import {
     Search, ArrowRight, Trash2, Hash, Sparkles, Code, BrainCircuit, Zap, BookOpen, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,12 +70,12 @@ export default function Home() {
                         Modern Assessment Platform
                     </span>
                     <h1 className="text-4xl md:text-6xl font-bold text-white">
-                        Learn, Test, and <br/> Grow Your Skills.
+                        Learn, Test, and <br /> Grow Your Skills.
                     </h1>
                     <p className="text-slate-400 text-lg max-w-2xl mx-auto">
                         Join our community of learners to take live quizzes, earn verified certificates, and track your progress globally.
                     </p>
-                    
+
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-4">
                         {!user ? (
                             <>
@@ -88,9 +88,9 @@ export default function Home() {
                             </>
                         ) : (
                             <form onSubmit={handleJoin} className="flex bg-white/5 border border-white/10 p-1.5 rounded-xl focus-within:border-primary-500 transition-all max-w-md w-full">
-                                <input 
-                                    type="text" 
-                                    placeholder="Enter Access Code..." 
+                                <input
+                                    type="text"
+                                    placeholder="Enter Access Code..."
                                     value={joinCode}
                                     onChange={(e) => setJoinCode(e.target.value)}
                                     className="bg-transparent border-none focus:ring-0 text-white font-bold px-4 flex-1 placeholder:text-slate-600"
@@ -109,8 +109,8 @@ export default function Home() {
                 <div className="bg-[#1e293b]/50 p-2 rounded-2xl border border-white/5 flex flex-wrap gap-2 items-center">
                     <div className="relative flex-1 min-w-[300px]">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="Search quizzes, topics, or creators..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -120,7 +120,7 @@ export default function Home() {
                     <div className="h-8 w-px bg-white/10 mx-2 hidden md:block"></div>
                     <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
                         {CATEGORIES.map(cat => (
-                            <button 
+                            <button
                                 key={cat.name}
                                 onClick={() => setActiveCategory(cat.name)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeCategory === cat.name ? 'bg-primary-600 text-white' : 'hover:bg-white/5 text-slate-400'}`}
@@ -138,22 +138,22 @@ export default function Home() {
 
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[1,2,3].map(i => <div key={i} className="h-80 bg-white/5 rounded-2xl animate-pulse"></div>)}
+                            {[1, 2, 3].map(i => <div key={i} className="h-80 bg-white/5 rounded-2xl animate-pulse"></div>)}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <AnimatePresence>
                                 {quizzes.map((quiz) => (
-                                    <motion.div 
-                                        key={quiz.id} 
-                                        initial={{ opacity: 0 }} 
+                                    <motion.div
+                                        key={quiz.id}
+                                        initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         className="group bg-[#1e293b] rounded-2xl overflow-hidden border border-white/5 hover:border-primary-500/30 transition-all flex flex-col shadow-lg"
                                     >
                                         <div className="relative h-44 bg-slate-800">
-                                            <img 
-                                                src={quiz.thumbnail_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop`} 
-                                                alt={quiz.title} 
+                                            <img
+                                                src={quiz.thumbnail_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop`}
+                                                alt={quiz.title}
                                                 className="w-full h-full object-cover opacity-60"
                                             />
                                             <div className="absolute top-4 left-4">
@@ -162,7 +162,7 @@ export default function Home() {
                                                 </span>
                                             </div>
                                             {user?.role === 'admin' && (
-                                                <button 
+                                                <button
                                                     onClick={() => deleteQuiz(quiz.id)}
                                                     className="absolute top-4 right-4 p-2 bg-red-600/20 text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:text-white"
                                                 >
@@ -179,14 +179,14 @@ export default function Home() {
                                             <p className="text-slate-400 text-sm line-clamp-2 h-10 mb-6 font-medium">
                                                 {quiz.description || "Unlock high-level insights with this verified assessment."}
                                             </p>
-                                            
+
                                             <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                                                 <div>
                                                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Enrollment</p>
                                                     <p className="text-white font-bold text-sm uppercase">Free Access</p>
                                                 </div>
-                                                <Link 
-                                                    to={`/quiz/${quiz.code}`} 
+                                                <Link
+                                                    to={`/quiz/${quiz.code}`}
                                                     className="w-10 h-10 bg-white/5 hover:bg-primary-600 text-primary-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-md group-hover:translate-x-1"
                                                 >
                                                     <ArrowRight size={20} />
@@ -211,7 +211,7 @@ export default function Home() {
                                 <div className="bg-primary-600 p-2 rounded-xl text-white shadow-lg shadow-primary-500/20">
                                     <BrainCircuit size={24} />
                                 </div>
-                                <span className="text-xl font-bold text-white tracking-tight">QuizMaster</span>
+                                <span className="text-xl font-bold text-white tracking-tight">NexQuiz</span>
                             </div>
                             <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
                                 The ultimate modern assessment platform. Build, deploy, and analyze professional quizzes with real-time proctoring and analytics.
@@ -251,7 +251,7 @@ export default function Home() {
 
                     <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            &copy; {new Date().getFullYear()} QuizMaster System. All rights reserved.
+                            &copy; {new Date().getFullYear()} NexQuiz System. All rights reserved.
                         </p>
                         <div className="flex gap-6">
                             <span className="text-slate-600 text-xs font-bold uppercase tracking-widest">Built for Education</span>
@@ -265,5 +265,5 @@ export default function Home() {
 }
 
 function TrendingUp(props) {
-    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
+    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
 }

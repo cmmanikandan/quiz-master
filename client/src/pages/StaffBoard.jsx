@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
-import { 
-    Plus, Upload, FileText, BarChart3, Trash2, CheckCircle, Zap, Trophy, MessageSquare, 
+import {
+    Plus, Upload, FileText, BarChart3, Trash2, CheckCircle, Zap, Trophy, MessageSquare,
     Smartphone, Mail, Send, Settings, ChevronLeft, Search, X, Shield, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +22,7 @@ export default function StaffBoard() {
     const [editingQuiz, setEditingQuiz] = useState(null);
     const [whatsappList, setWhatsappList] = useState([]);
     const [manualPhone, setManualPhone] = useState('');
-    
+
     const selectedQuizObj = quizzes.find(q => q.id === selectedQuiz);
 
     useEffect(() => {
@@ -41,7 +41,7 @@ export default function StaffBoard() {
             console.error(err);
         }
     };
-    
+
     const [manualQuestion, setManualQuestion] = useState({
         question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_option: 'a', explanation: '', type: 'mcq', points: 1, image_url: ''
     });
@@ -157,35 +157,36 @@ export default function StaffBoard() {
     // Build the formatted WhatsApp message
     const buildMessage = () => {
         const quizTitle = selectedQuizObj?.title || 'Quiz';
-        const quizCode  = selectedQuizObj?.code  || '';
-        const quizLink  = `${window.location.origin}/quiz/${quizCode}`;
+        const quizCode = selectedQuizObj?.code || '';
+        const quizLink = `${window.location.origin}/quiz/${quizCode}`;
 
         // Use fromCodePoint so emojis aren't corrupted by Windows file encoding
         const E = {
-            book:   String.fromCodePoint(0x1F4DA), // 📚
-            pencil: String.fromCodePoint(0x1F4DD), // 📝
-            key:    String.fromCodePoint(0x1F511), // 🔑
-            link:   String.fromCodePoint(0x1F517), // 🔗
-            dart:   String.fromCodePoint(0x1F3AF), // 🎯
-            wave:   String.fromCodePoint(0x1F44B), // 👋
+            rocket: String.fromCodePoint(0x1F680), // 🚀
+            star: String.fromCodePoint(0x2728),  // ✨
+            trophy: String.fromCodePoint(0x1F3C6), // 🏆
+            lock: String.fromCodePoint(0x1F512), // 🔒
+            link: String.fromCodePoint(0x1F517), // 🔗
+            wave: String.fromCodePoint(0x1F44B), // 👋
         };
 
         return [
-            `${E.book} *QuizMaster \u2014 Quiz Invitation*`,
+            `${E.rocket} *NexQuiz \u2014 Secure Assessment*`,
             ``,
-            `${E.wave} Hello! You have been invited to take a quiz on QuizMaster.`,
+            `${E.wave} Hello! You've been selected to participate in a proctored assessment on NexQuiz.`,
             ``,
-            `${E.pencil} *Quiz:* ${quizTitle}`,
-            `${E.key} *Access Code:* \`${quizCode}\``,
-            `${E.link} *Direct Link:*`,
+            `${E.star} *Quiz:* ${quizTitle}`,
+            `${E.lock} *Access Code:* \`${quizCode}\``,
+            `${E.link} *Start Now:*`,
             quizLink,
             ``,
-            `*How to join:*`,
-            `1. Tap the link above to open the quiz directly, OR`,
-            `2. Visit ${window.location.origin} and enter the access code`,
+            `*Instructions:*`,
+            `1. Ensure a stable internet connection.`,
+            `2. Do not switch tabs during the session (Security Tracked).`,
+            `3. Use the code above if prompted.`,
             ``,
-            `${E.dart} Good luck!`,
-            `\u2014 QuizMaster Team`
+            `${E.trophy} Aim for the top!`,
+            `\u2014 The NexQuiz AI Platform`
         ].join('\n');
     };
 
@@ -219,7 +220,7 @@ export default function StaffBoard() {
     const downloadLinksFile = () => {
         const msg = encodeURIComponent(buildMessage());
         const lines = [
-            `QuizMaster — WhatsApp Invite Links`,
+            `NexQuiz — WhatsApp Invite Links`,
             `Quiz: ${selectedQuizObj?.title} | Code: ${selectedQuizObj?.code}`,
             `Generated: ${new Date().toLocaleString()}`,
             ``,
@@ -249,7 +250,7 @@ export default function StaffBoard() {
             {/* Header */}
             <div className="flex justify-between items-center gap-2">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Staff Control Panel</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">NexQuiz Staff Panel</h1>
                     <p className="text-slate-500 font-semibold text-[10px] uppercase tracking-widest mt-0.5">Management & Proctoring Hub</p>
                 </div>
                 <button onClick={() => setShowCreate(true)} className="bg-primary-600 hover:bg-primary-500 text-white flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md shrink-0">
@@ -262,7 +263,7 @@ export default function StaffBoard() {
                     <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1e293b] p-6 sm:p-8 rounded-2xl w-full max-w-xl border border-white/5 shadow-2xl overflow-hidden relative overflow-y-auto max-h-[90vh]">
                         <div className="absolute top-0 left-0 w-full h-1 bg-primary-500"></div>
                         <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-2">
-                            <Plus className="text-primary-500" size={18}/> Create Quiz
+                            <Plus className="text-primary-500" size={18} /> Create Quiz
                         </h2>
                         <form onSubmit={handleCreate} className="space-y-4">
                             <div>
@@ -347,7 +348,7 @@ export default function StaffBoard() {
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-5 border-b border-white/5">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 bg-primary-600/10 rounded-xl flex items-center justify-center text-primary-500 border border-primary-500/20">
-                                            {uploadMode === 'manual' ? <Plus size={18}/> : uploadMode === 'settings' ? <Settings size={17}/> : uploadMode === 'invite' ? <MessageSquare size={17}/> : <FileText size={17}/>}
+                                            {uploadMode === 'manual' ? <Plus size={18} /> : uploadMode === 'settings' ? <Settings size={17} /> : uploadMode === 'invite' ? <MessageSquare size={17} /> : <FileText size={17} />}
                                         </div>
                                         <h2 className="text-base font-bold uppercase tracking-tight text-white">
                                             {uploadMode === 'manual' ? 'Add Question' : uploadMode === 'settings' ? 'Settings' : uploadMode === 'invite' ? 'Broadcast' : 'Import CSV'}
@@ -356,17 +357,16 @@ export default function StaffBoard() {
                                     {/* Scrollable tab bar */}
                                     <div className="flex bg-slate-900 p-1 rounded-xl border border-white/5 overflow-x-auto w-full sm:w-auto gap-0.5">
                                         {[
-                                            { id: 'csv', label: 'CSV', icon: <Upload size={12}/> },
-                                            { id: 'manual', label: 'Manual', icon: <Plus size={12}/> },
-                                            { id: 'settings', label: 'Settings', icon: <Settings size={12}/> },
-                                            { id: 'invite', label: 'Invite', icon: <MessageSquare size={12}/> },
+                                            { id: 'csv', label: 'CSV', icon: <Upload size={12} /> },
+                                            { id: 'manual', label: 'Manual', icon: <Plus size={12} /> },
+                                            { id: 'settings', label: 'Settings', icon: <Settings size={12} /> },
+                                            { id: 'invite', label: 'Invite', icon: <MessageSquare size={12} /> },
                                         ].map(tab => (
                                             <button
                                                 key={tab.id}
                                                 onClick={() => setUploadMode(tab.id)}
-                                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                                                    uploadMode === tab.id ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-white'
-                                                }`}
+                                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${uploadMode === tab.id ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-white'
+                                                    }`}
                                             >
                                                 {tab.icon} {tab.label}
                                             </button>
@@ -378,51 +378,51 @@ export default function StaffBoard() {
                                     {uploadMode === 'settings' ? (
                                         <motion.form key="settings" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} onSubmit={async (e) => {
                                             e.preventDefault();
-                                            try { await api.put(`/quiz/${selectedQuiz}`, editingQuiz); alert('Configuration Synchronized'); fetchQuizzes(); } catch(err) { alert('Sync Failed'); }
+                                            try { await api.put(`/quiz/${selectedQuiz}`, editingQuiz); alert('Configuration Synchronized'); fetchQuizzes(); } catch (err) { alert('Sync Failed'); }
                                         }} className="space-y-8 text-left">
                                             <div className="grid grid-cols-2 gap-8">
                                                 <div className="col-span-2">
                                                     <label className="text-[10px] text-slate-500 uppercase font-black mb-2 block tracking-widest">Base Assessment Title</label>
-                                                    <input type="text" className="input-field py-4" value={editingQuiz?.title || ''} onChange={e => setEditingQuiz({...editingQuiz, title: e.target.value})} />
+                                                    <input type="text" className="input-field py-4" value={editingQuiz?.title || ''} onChange={e => setEditingQuiz({ ...editingQuiz, title: e.target.value })} />
                                                 </div>
                                                 <div className="col-span-2">
                                                     <label className="text-[10px] text-slate-500 uppercase font-black mb-2 block tracking-widest">Strategic Instructions</label>
-                                                    <textarea className="input-field h-32" value={editingQuiz?.description || ''} onChange={e => setEditingQuiz({...editingQuiz, description: e.target.value})} />
+                                                    <textarea className="input-field h-32" value={editingQuiz?.description || ''} onChange={e => setEditingQuiz({ ...editingQuiz, description: e.target.value })} />
                                                 </div>
                                                 <div>
                                                     <label className="text-[10px] text-slate-500 uppercase font-black mb-2 block tracking-widest">Session Logic</label>
-                                                    <select className="input-field bg-slate-800" value={editingQuiz?.quiz_type || 'async'} onChange={e => setEditingQuiz({...editingQuiz, quiz_type: e.target.value})}>
+                                                    <select className="input-field bg-slate-800" value={editingQuiz?.quiz_type || 'async'} onChange={e => setEditingQuiz({ ...editingQuiz, quiz_type: e.target.value })}>
                                                         <option value="async">Open Entry (Self-Paced)</option>
                                                         <option value="live">Proctored Live (Invigilator Required)</option>
                                                         <option value="scheduled">Synchronized Start (Time-Window)</option>
                                                     </select>
                                                 </div>
                                                 <div>
-                                                     <label className="text-[10px] text-slate-500 uppercase font-black mb-2 block tracking-widest">Approval Threshold (%)</label>
-                                                     <input type="number" className="input-field" value={editingQuiz?.pass_percentage || 50} onChange={e => setEditingQuiz({...editingQuiz, pass_percentage: e.target.value})} />
+                                                    <label className="text-[10px] text-slate-500 uppercase font-black mb-2 block tracking-widest">Approval Threshold (%)</label>
+                                                    <input type="number" className="input-field" value={editingQuiz?.pass_percentage || 50} onChange={e => setEditingQuiz({ ...editingQuiz, pass_percentage: e.target.value })} />
                                                 </div>
                                                 <div className="col-span-2 grid grid-cols-3 gap-4">
-                                                     <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
-                                                          <span className="text-[9px] font-bold text-slate-500 uppercase">Security</span>
-                                                          <label className="flex items-center gap-3 cursor-pointer">
-                                                              <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.shuffle_questions} onChange={e => setEditingQuiz({...editingQuiz, shuffle_questions: e.target.checked})} />
-                                                              <span className="text-xs font-bold">Randomize Sequence</span>
-                                                          </label>
-                                                     </div>
-                                                     <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
-                                                          <span className="text-[9px] font-bold text-slate-500 uppercase">Accessibility</span>
-                                                          <label className="flex items-center gap-3 cursor-pointer">
-                                                              <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.is_public} onChange={e => setEditingQuiz({...editingQuiz, is_public: e.target.checked})} />
-                                                              <span className="text-xs font-bold">Public Listing</span>
-                                                          </label>
-                                                     </div>
-                                                     <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
-                                                          <span className="text-[9px] font-bold text-slate-500 uppercase">Identity</span>
-                                                          <label className="flex items-center gap-3 cursor-pointer">
-                                                              <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.require_details} onChange={e => setEditingQuiz({...editingQuiz, require_details: e.target.checked})} />
-                                                              <span className="text-xs font-bold">ID Verification</span>
-                                                          </label>
-                                                     </div>
+                                                    <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">Security</span>
+                                                        <label className="flex items-center gap-3 cursor-pointer">
+                                                            <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.shuffle_questions} onChange={e => setEditingQuiz({ ...editingQuiz, shuffle_questions: e.target.checked })} />
+                                                            <span className="text-xs font-bold">Randomize Sequence</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">Accessibility</span>
+                                                        <label className="flex items-center gap-3 cursor-pointer">
+                                                            <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.is_public} onChange={e => setEditingQuiz({ ...editingQuiz, is_public: e.target.checked })} />
+                                                            <span className="text-xs font-bold">Public Listing</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className="bg-black/20 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase">Identity</span>
+                                                        <label className="flex items-center gap-3 cursor-pointer">
+                                                            <input type="checkbox" className="w-4 h-4 accent-primary-500" checked={editingQuiz?.require_details} onChange={e => setEditingQuiz({ ...editingQuiz, require_details: e.target.checked })} />
+                                                            <span className="text-xs font-bold">ID Verification</span>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <button type="submit" className="bg-primary-600 hover:bg-primary-500 w-full py-5 rounded-2xl text-white font-black uppercase text-xs tracking-widest transition-all">Synchronize Configuration</button>
@@ -448,7 +448,7 @@ export default function StaffBoard() {
                                                     <form onSubmit={async (e) => {
                                                         e.preventDefault();
                                                         const fd = new FormData(); fd.append('csv', e.target.csv.files[0]);
-                                                        try { await api.post(`/quiz/${selectedQuiz}/invite`, fd); alert('Invitations Distributed'); } catch(err) { alert('Broadcast Failed'); }
+                                                        try { await api.post(`/quiz/${selectedQuiz}/invite`, fd); alert('Invitations Distributed'); } catch (err) { alert('Broadcast Failed'); }
                                                     }} className="space-y-6">
                                                         <div className="border-2 border-dashed border-white/10 p-12 rounded-3xl text-center hover:border-primary-500/50 transition-all cursor-pointer bg-white/[0.01]">
                                                             <input type="file" name="csv" accept=".csv" className="text-slate-500 font-bold" />
@@ -523,16 +523,14 @@ export default function StaffBoard() {
 
                                                             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                                                                 {whatsappList.map((p, i) => (
-                                                                    <div key={i} className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${
-                                                                        p.sent ? 'bg-green-600/5 border-green-500/20' : 'bg-white/5 border-white/5'
-                                                                    }`}>
-                                                                        <span className="text-[10px] font-bold text-slate-600 w-5">{i+1}.</span>
+                                                                    <div key={i} className={`flex items-center gap-2 p-3 rounded-xl border transition-all ${p.sent ? 'bg-green-600/5 border-green-500/20' : 'bg-white/5 border-white/5'
+                                                                        }`}>
+                                                                        <span className="text-[10px] font-bold text-slate-600 w-5">{i + 1}.</span>
                                                                         <span className={`font-mono text-sm flex-1 ${p.sent ? 'text-slate-500 line-through' : 'text-white'}`}>{p.phone}</span>
                                                                         <button
                                                                             onClick={() => sendWhatsapp(p.phone)}
-                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                                                                                p.sent ? 'bg-slate-800 text-slate-500 hover:bg-green-600 hover:text-white' : 'bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white'
-                                                                            }`}
+                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${p.sent ? 'bg-slate-800 text-slate-500 hover:bg-green-600 hover:text-white' : 'bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white'
+                                                                                }`}
                                                                             title="Open WhatsApp chat for this number"
                                                                         >
                                                                             {p.sent ? 'Resend' : 'Open'}
@@ -567,8 +565,8 @@ export default function StaffBoard() {
                                             </div>
                                             <form onSubmit={handleUpload} className="space-y-8">
                                                 <div className="border-2 border-dashed border-white/5 rounded-[2.5rem] p-16 text-center bg-white/[0.01] hover:border-primary-500/30 transition-colors">
-                                                     {csvFile ? <div className="text-primary-400 font-bold mb-4 flex items-center justify-center gap-2"><Upload size={20} /> {csvFile.name}</div> : <div className="text-slate-600 font-bold mb-4">Select or Drop CSV File</div>}
-                                                     <input type="file" onChange={e => setCsvFile(e.target.files[0])} accept=".csv" className="text-slate-400 text-sm file:mr-6 file:py-3 file:px-8 file:rounded-xl file:border-0 file:bg-primary-600 file:text-white font-black file:uppercase file:text-[10px]" />
+                                                    {csvFile ? <div className="text-primary-400 font-bold mb-4 flex items-center justify-center gap-2"><Upload size={20} /> {csvFile.name}</div> : <div className="text-slate-600 font-bold mb-4">Select or Drop CSV File</div>}
+                                                    <input type="file" onChange={e => setCsvFile(e.target.files[0])} accept=".csv" className="text-slate-400 text-sm file:mr-6 file:py-3 file:px-8 file:rounded-xl file:border-0 file:bg-primary-600 file:text-white font-black file:uppercase file:text-[10px]" />
                                                 </div>
                                                 <div className="flex gap-4">
                                                     <button type="submit" className="bg-primary-600 hover:bg-primary-500 flex-1 py-5 rounded-[1.5rem] text-white font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-primary-500/20">Upload CSV</button>
@@ -593,25 +591,25 @@ export default function StaffBoard() {
                                                     {['a', 'b', 'c', 'd'].map(opt => (
                                                         <div key={opt} className="relative">
                                                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">{opt.toUpperCase()}</div>
-                                                            <input type="text" className="input-field pl-8 text-sm h-12" placeholder={`Option ${opt.toUpperCase()}`} required value={manualQuestion[`option_${opt}`]} onChange={e => setManualQuestion({...manualQuestion, [`option_${opt}`]: e.target.value})} />
+                                                            <input type="text" className="input-field pl-8 text-sm h-12" placeholder={`Option ${opt.toUpperCase()}`} required value={manualQuestion[`option_${opt}`]} onChange={e => setManualQuestion({ ...manualQuestion, [`option_${opt}`]: e.target.value })} />
                                                         </div>
                                                     ))}
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1">
                                                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Correct Answer</label>
-                                                        <select className="input-field bg-slate-800 h-12" value={manualQuestion.correct_option} onChange={e => setManualQuestion({...manualQuestion, correct_option: e.target.value})}>
+                                                        <select className="input-field bg-slate-800 h-12" value={manualQuestion.correct_option} onChange={e => setManualQuestion({ ...manualQuestion, correct_option: e.target.value })}>
                                                             {['a', 'b', 'c', 'd'].map(a => <option key={a} value={a}>Option {a.toUpperCase()}</option>)}
                                                         </select>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Points</label>
-                                                        <input type="number" className="input-field h-12" value={manualQuestion.points} onChange={e => setManualQuestion({...manualQuestion, points: e.target.value})} />
+                                                        <input type="number" className="input-field h-12" value={manualQuestion.points} onChange={e => setManualQuestion({ ...manualQuestion, points: e.target.value })} />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Explanation (optional)</label>
-                                                    <input type="text" className="input-field h-12" placeholder="Explain why this answer is correct..." value={manualQuestion.explanation} onChange={e => setManualQuestion({...manualQuestion, explanation: e.target.value})} />
+                                                    <input type="text" className="input-field h-12" placeholder="Explain why this answer is correct..." value={manualQuestion.explanation} onChange={e => setManualQuestion({ ...manualQuestion, explanation: e.target.value })} />
                                                 </div>
                                             </div>
                                             <div className="flex gap-3">
@@ -651,11 +649,10 @@ export default function StaffBoard() {
                                             <div
                                                 key={q.id}
                                                 onClick={() => handleEditQuestion(q)}
-                                                className={`p-4 rounded-xl border cursor-pointer transition-all group ${
-                                                    editingQuestionId === q.id
+                                                className={`p-4 rounded-xl border cursor-pointer transition-all group ${editingQuestionId === q.id
                                                         ? 'bg-primary-600/10 border-primary-500/40'
                                                         : 'bg-white/[0.02] border-white/5 hover:border-primary-500/30 hover:bg-white/5'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-[10px] text-primary-400 font-bold uppercase">Q{idx + 1}</span>

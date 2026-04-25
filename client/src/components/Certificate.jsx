@@ -43,7 +43,7 @@ export default function Certificate({ userName, quizTitle, score, date, passPerc
                     </div>
                     <div className="text-right border-t border-slate-400 pt-2 px-4">
                         <p className="text-xs text-slate-500">Authority Signature</p>
-                        <p className="font-bold italic">QuizMaster Official</p>
+                        <p className="font-bold italic">NexQuiz Official</p>
                     </div>
                 </div>
             </div>

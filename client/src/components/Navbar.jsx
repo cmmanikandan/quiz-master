@@ -19,8 +19,8 @@ export default function Navbar() {
         <nav className="glass sticky top-0 z-[100] px-4 md:px-6 py-3 border-b border-white/5 bg-[#0f172a]/95 backdrop-blur-md">
             <div className="container mx-auto flex justify-between items-center">
                 <Link to="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-indigo-400 flex items-center gap-2">
-                   <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white text-lg">Q</div>
-                   <span>QuizMaster</span>
+                    <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white text-lg">N</div>
+                    <span>NexQuiz</span>
                 </Link>
 
                 {/* Desktop Menu */}
@@ -61,7 +61,7 @@ export default function Navbar() {
             {/* Mobile Menu */}
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
